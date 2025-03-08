@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { generateAnthropicResponse } from '@/lib/anthropic';
 import { activateDecisionNode } from './decisionTree';
 import { simulateContinuousChanges } from './parameterSimulation';
@@ -149,18 +148,25 @@ export async function processScenarioTick(scenarioId: string, secondsElapsed: nu
 async function checkTimeTriggers(scenarioId: string, elapsedSeconds: number): Promise<void> {
   try {
     // Check for decision nodes that should be triggered based on time
-    const { data, error } = await supabase
-      .from('decision_nodes')
-      .select('*')
-      .eq('scenario_id', scenarioId)
-      .eq('is_active', false)
-      .not('trigger_time', 'is', null)
-      .lte('trigger_time', elapsedSeconds);
+    const response = await fetch(`/api/scenarios/decision-nodes?scenarioId=${scenarioId}&isActive=false&triggerTime=${elapsedSeconds}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (error) throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to check time triggers');
+    }
     
     // Activate any nodes that should be triggered
-    for (const node of data || []) {
+    for (const node of result.data || []) {
       await activateDecisionNode(node.id);
     }
   } catch (error) {
@@ -175,34 +181,49 @@ async function checkTimeTriggers(scenarioId: string, elapsedSeconds: number): Pr
 async function checkCommunicationsTriggers(scenarioId: string, elapsedSeconds: number): Promise<void> {
   try {
     // Check for communications that should be sent based on time
-    const { data, error } = await supabase
-      .from('communications_queue')
-      .select('*')
-      .eq('scenario_id', scenarioId)
-      .eq('is_sent', false)
-      .not('trigger_time', 'is', null)
-      .lte('trigger_time', elapsedSeconds);
+    const response = await fetch(`/api/scenarios/communications/queue?scenarioId=${scenarioId}&triggerTime=${elapsedSeconds}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (error) throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+      throw new Error(result.error || 'Failed to check communications triggers');
+    }
     
     // Send any communications that should be triggered
-    for (const comm of data || []) {
+    for (const comm of result.data || []) {
       // Mark as sent
-      await supabase
-        .from('communications_queue')
-        .update({ is_sent: true })
-        .eq('id', comm.id);
+      await fetch(`/api/scenarios/communications/queue/${comm.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          is_sent: true
+        }),
+      });
       
       // Copy to actual communications
-      await supabase
-        .from('communications')
-        .insert({
-          scenario_id: comm.scenario_id,
-          type: comm.type,
+      await fetch('/api/scenarios/communications', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          scenarioId: comm.scenario_id,
           sender: comm.sender,
           message: comm.message,
-          is_important: comm.is_important,
-        });
+          isImportant: comm.is_important,
+        }),
+      });
     }
   } catch (error) {
     console.error('Error checking communications triggers:', error);
@@ -216,48 +237,50 @@ async function checkCommunicationsTriggers(scenarioId: string, elapsedSeconds: n
 export async function adaptScenarioDifficulty(scenarioId: string): Promise<void> {
   try {
     // Get current scenario state
-    const { data: stateData, error: stateError } = await supabase
-      .from('scenario_states')
-      .select('*')
-      .eq('scenario_id', scenarioId)
-      .order('created_at', { ascending: false })
-      .limit(1)
-      .single();
+    const stateResponse = await fetch(`/api/scenarios/state?scenarioId=${scenarioId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (stateError && stateError.code !== 'PGRST116') throw stateError;
-    if (!stateData) return; // No state to adapt
+    if (!stateResponse.ok) {
+      throw new Error(`HTTP error! status: ${stateResponse.status}`);
+    }
+    
+    const stateResult = await stateResponse.json();
+    
+    if (!stateResult.success || !stateResult.data) {
+      return; // No state to adapt
+    }
+    
+    const stateData = stateResult.data;
     
     // Get decision history
-    const { data: decisionsData, error: decisionsError } = await supabase
-      .from('decision_responses')
-      .select(`
-        id,
-        decision_id,
-        option_id,
-        created_at,
-        decisions:decision_id (
-          id,
-          title,
-          description,
-          decision_options (
-            id,
-            text,
-            consequences,
-            is_recommended
-          )
-        )
-      `)
-      .eq('scenario_id', scenarioId)
-      .order('created_at', { ascending: false })
-      .limit(5);
+    const decisionsResponse = await fetch(`/api/scenarios/decisions/responses?scenarioId=${scenarioId}&limit=5`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (decisionsError) throw decisionsError;
+    if (!decisionsResponse.ok) {
+      throw new Error(`HTTP error! status: ${decisionsResponse.status}`);
+    }
+    
+    const decisionsResult = await decisionsResponse.json();
+    
+    if (!decisionsResult.success) {
+      throw new Error(decisionsResult.error || 'Failed to get decision responses');
+    }
+    
+    const decisionsData = decisionsResult.data || [];
     
     // Calculate performance metrics
     let recommendedChoices = 0;
-    let totalChoices = decisionsData?.length || 0;
+    let totalChoices = decisionsData.length || 0;
     
-    for (const decision of decisionsData || []) {
+    for (const decision of decisionsData) {
       // Use type assertion to handle the nested structure
       const decisionData = decision.decisions as any;
       const options = decisionData?.decision_options || [];
@@ -320,35 +343,54 @@ export async function adaptScenarioDifficulty(scenarioId: string): Promise<void>
 async function applyAdaptations(scenarioId: string, adaptations: any): Promise<void> {
   try {
     // Store the adaptations for reference
-    await supabase
-      .from('scenario_adaptations')
-      .insert({
-        scenario_id: scenarioId,
+    await fetch('/api/scenarios/adaptations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        scenarioId,
         adaptations,
-      });
+      }),
+    });
     
     // Apply difficulty adjustment to future decisions
     if (adaptations.difficulty_adjustment !== 'maintain') {
       // Get pending decisions
-      const { data: nodesData, error: nodesError } = await supabase
-        .from('decision_nodes')
-        .select('*')
-        .eq('scenario_id', scenarioId)
-        .eq('is_active', false)
-        .is('decision_id', 'not.null');
+      const nodesResponse = await fetch(`/api/scenarios/decision-nodes?scenarioId=${scenarioId}&isActive=false`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      if (nodesError) throw nodesError;
+      if (!nodesResponse.ok) {
+        throw new Error(`HTTP error! status: ${nodesResponse.status}`);
+      }
+      
+      const nodesResult = await nodesResponse.json();
+      
+      if (!nodesResult.success) {
+        throw new Error(nodesResult.error || 'Failed to get decision nodes');
+      }
       
       // Adjust time limits based on difficulty
-      for (const node of nodesData || []) {
+      for (const node of nodesResult.data || []) {
         if (node.decision_id) {
-          const { data: decisionData, error: decisionError } = await supabase
-            .from('decisions')
-            .select('*')
-            .eq('id', node.decision_id)
-            .single();
+          const decisionResponse = await fetch(`/api/scenarios/decisions/${node.decision_id}`, {
+            method: 'GET',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          });
           
-          if (decisionError) continue;
+          if (!decisionResponse.ok) continue;
+          
+          const decisionResult = await decisionResponse.json();
+          
+          if (!decisionResult.success) continue;
+          
+          const decisionData = decisionResult.data;
           
           let timeLimit = decisionData.time_limit;
           if (timeLimit && adaptations.time_pressure_adjustment !== 'maintain') {
@@ -356,10 +398,15 @@ async function applyAdaptations(scenarioId: string, adaptations: any): Promise<v
             const factor = adaptations.time_pressure_adjustment === 'increase' ? 0.8 : 1.2;
             timeLimit = Math.round(timeLimit * factor);
             
-            await supabase
-              .from('decisions')
-              .update({ time_limit: timeLimit })
-              .eq('id', node.decision_id);
+            await fetch(`/api/scenarios/decisions/${node.decision_id}`, {
+              method: 'PATCH',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                timeLimit
+              }),
+            });
           }
         }
       }
@@ -367,40 +414,51 @@ async function applyAdaptations(scenarioId: string, adaptations: any): Promise<v
     
     // Apply weather intensity adjustment
     if (adaptations.weather_intensity_adjustment !== 'maintain') {
-      const { data: weatherData, error: weatherError } = await supabase
-        .from('weather_conditions')
-        .select('weather_data')
-        .eq('scenario_id', scenarioId)
-        .single();
+      const weatherResponse = await fetch(`/api/scenarios/weather?scenarioId=${scenarioId}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
       
-      if (!weatherError && weatherData && weatherData.weather_data) {
-        const weatherCells = weatherData.weather_data;
+      if (weatherResponse.ok) {
+        const weatherResult = await weatherResponse.json();
         
-        // Adjust weather intensity
-        const adjustedCells = weatherCells.map((cell: any) => {
-          if (adaptations.weather_intensity_adjustment === 'increase') {
-            // Increase intensity
-            if (cell.intensity === 'light') cell.intensity = 'moderate';
-            else if (cell.intensity === 'moderate') cell.intensity = 'heavy';
-            
-            // Slightly increase size
-            cell.size = Math.min(1, cell.size * 1.2);
-          } else {
-            // Decrease intensity
-            if (cell.intensity === 'heavy') cell.intensity = 'moderate';
-            else if (cell.intensity === 'moderate') cell.intensity = 'light';
-            
-            // Slightly decrease size
-            cell.size = Math.max(0.1, cell.size * 0.8);
-          }
+        if (weatherResult.success && weatherResult.data && weatherResult.data.weather_data) {
+          const weatherCells = weatherResult.data.weather_data;
           
-          return cell;
-        });
-        
-        await supabase
-          .from('weather_conditions')
-          .update({ weather_data: adjustedCells })
-          .eq('scenario_id', scenarioId);
+          // Adjust weather intensity
+          const adjustedCells = weatherCells.map((cell: any) => {
+            if (adaptations.weather_intensity_adjustment === 'increase') {
+              // Increase intensity
+              if (cell.intensity === 'light') cell.intensity = 'moderate';
+              else if (cell.intensity === 'moderate') cell.intensity = 'heavy';
+              
+              // Slightly increase size
+              cell.size = Math.min(1, cell.size * 1.2);
+            } else {
+              // Decrease intensity
+              if (cell.intensity === 'heavy') cell.intensity = 'moderate';
+              else if (cell.intensity === 'moderate') cell.intensity = 'light';
+              
+              // Slightly decrease size
+              cell.size = Math.max(0.1, cell.size * 0.8);
+            }
+            
+            return cell;
+          });
+          
+          await fetch(`/api/scenarios/weather`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              scenarioId,
+              weatherData: adjustedCells
+            }),
+          });
+        }
       }
     }
     

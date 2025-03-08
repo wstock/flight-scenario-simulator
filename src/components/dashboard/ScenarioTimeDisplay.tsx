@@ -5,13 +5,14 @@ import { getScenarioTiming } from '@/lib/scenario/realTimeAdaptation';
 
 export interface ScenarioTimeDisplayProps {
   scenarioId: string;
+  className?: string;
 }
 
 /**
  * ScenarioTimeDisplay component shows the current scenario time
  * with accelerated time simulation
  */
-export default function ScenarioTimeDisplay({ scenarioId }: ScenarioTimeDisplayProps) {
+export default function ScenarioTimeDisplay({ scenarioId, className = '' }: ScenarioTimeDisplayProps) {
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isPaused, setIsPaused] = useState(false);
   
@@ -50,7 +51,7 @@ export default function ScenarioTimeDisplay({ scenarioId }: ScenarioTimeDisplayP
   };
   
   return (
-    <div className="bg-neutral-800 rounded-lg p-4 flex flex-col items-center">
+    <div className={`bg-neutral-800 rounded-lg p-4 flex flex-col items-center ${className}`}>
       <span className="text-sm text-neutral-400 mb-1">Scenario Time</span>
       <span className="text-2xl font-bold">{formatTime(elapsedSeconds)}</span>
       {isPaused && <span className="text-xs text-yellow-500 mt-1">PAUSED</span>}

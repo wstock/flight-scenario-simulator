@@ -9,13 +9,9 @@ const meta: Meta<typeof AltitudeDisplay> = {
   },
   tags: ['autodocs'],
   argTypes: {
-    initialAltitude: {
+    altitude: {
       control: { type: 'number' },
-      description: 'Initial altitude in feet',
-    },
-    targetAltitude: {
-      control: { type: 'number' },
-      description: 'Target altitude in feet',
+      description: 'Current altitude in feet',
     },
     className: {
       control: { type: 'text' },
@@ -30,30 +26,28 @@ type Story = StoryObj<typeof AltitudeDisplay>;
 // Base story with default values
 export const Default: Story = {
   args: {
-    initialAltitude: 10000,
+    altitude: 10000,
   },
 };
 
-// Story showing climbing to target altitude
-export const Climbing: Story = {
+// Story with high altitude
+export const HighAltitude: Story = {
   args: {
-    initialAltitude: 10000,
-    targetAltitude: 15000,
+    altitude: 35000,
   },
 };
 
-// Story showing descending to target altitude
-export const Descending: Story = {
+// Story with low altitude
+export const LowAltitude: Story = {
   args: {
-    initialAltitude: 20000,
-    targetAltitude: 15000,
+    altitude: 2500,
   },
 };
 
 // Story with custom styling
 export const CustomStyling: Story = {
   args: {
-    initialAltitude: 12500,
+    altitude: 12500,
     className: 'bg-blue-900 border border-blue-700 w-64',
   },
 }; 

@@ -8,6 +8,7 @@ import WaypointsDisplay from './WaypointsDisplay';
 interface NavigationDisplayProps {
   className?: string;
   scenarioId?: string;
+  heading?: number;
   initialHeading?: number;
   initialRange?: number;
   initialPosition?: {
@@ -23,17 +24,22 @@ interface NavigationDisplayProps {
 export default function NavigationDisplay({
   className = '',
   scenarioId,
+  heading,
   initialHeading = 0,
   initialRange = 40,
   initialPosition = { latitude: 37.6213, longitude: -122.3790 }, // Default to SFO
 }: NavigationDisplayProps) {
-  const [heading, setHeading] = useState(initialHeading);
+  const [currentHeading, setCurrentHeading] = useState(heading || initialHeading);
   const [range, setRange] = useState(initialRange);
   
   // Update heading from props
   useEffect(() => {
-    setHeading(initialHeading);
-  }, [initialHeading]);
+    if (heading !== undefined) {
+      setCurrentHeading(heading);
+    } else if (initialHeading !== undefined) {
+      setCurrentHeading(initialHeading);
+    }
+  }, [heading, initialHeading]);
   
   // Update range from props
   useEffect(() => {
@@ -67,7 +73,7 @@ export default function NavigationDisplay({
       <div className="relative w-full aspect-square">
         {/* Base aircraft position display */}
         <AircraftPositionDisplay 
-          heading={heading}
+          heading={currentHeading}
           range={range}
           scenarioId={scenarioId}
           initialPosition={initialPosition}
@@ -76,14 +82,14 @@ export default function NavigationDisplay({
         
         {/* Weather overlay */}
         <WeatherOverlay 
-          heading={heading}
+          heading={currentHeading}
           range={range}
           scenarioId={scenarioId}
         />
         
         {/* Waypoints overlay */}
         <WaypointsDisplay 
-          heading={heading}
+          heading={currentHeading}
           range={range}
           scenarioId={scenarioId}
         />

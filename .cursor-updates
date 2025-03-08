@@ -13,3 +13,4 @@
 - Added Decision Options Component with time-limited decision interface and Supabase integration
 - Implemented AI Integration: Scenario Generator, Scenario Loader, ATC and Crew Communication Generators
 - Implemented Scenario State Management: Decision Tree, Impact Tracking, Parameter Simulation, Real-Time Adaptation, and Scenario Evaluation
+- Created Flight Simulator UI with Scenarios page and Simulator page integrating all components

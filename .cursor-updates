@@ -21,3 +21,5 @@
 - Started development and Storybook servers for testing
 - Fixed Anthropic API browser usage by creating a server-side API route and client-side utility
 - Implemented proper client/server detection for AI functionality to prevent browser errors
+- Updated AI configuration to use claude-3-7-sonnet-latest model via environment variables
+- Added ANTHROPIC_MODEL and NEXT_PUBLIC_ANTHROPIC_MODEL to .env for easier model upgrades

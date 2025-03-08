@@ -25,7 +25,7 @@ import { MessageParam } from '@anthropic-ai/sdk/resources/messages';
 
 // Available models
 export const MODELS = {
-  SONNET: 'claude-3-sonnet-20240229', // Claude 3.7 Sonnet (default)
+  SONNET: process.env.ANTHROPIC_MODEL || 'claude-3-7-sonnet-latest', // Use model from env or default to latest
 };
 
 // Only initialize Anthropic client on the server side

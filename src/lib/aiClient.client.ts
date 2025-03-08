@@ -7,19 +7,22 @@
 
 import { MODELS } from './aiClient';
 
+// Make the model configurable from the client side as well
+const DEFAULT_MODEL = process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || MODELS.SONNET;
+
 /**
  * Generate a chat completion using the API route
  * Safe to use in client components
  * 
  * @param messages Array of message objects with role and content
- * @param model Model to use (defaults to SONNET)
+ * @param model Model to use (defaults to configured model)
  * @param temperature Temperature for response generation (0-1)
  * @param maxTokens Maximum tokens to generate
  * @returns The generated text response
  */
 export async function generateAIResponse(
   messages: { role: string; content: string }[],
-  model: string = MODELS.SONNET,
+  model: string = DEFAULT_MODEL,
   temperature: number = 0.7,
   maxTokens: number = 1000
 ): Promise<string> {

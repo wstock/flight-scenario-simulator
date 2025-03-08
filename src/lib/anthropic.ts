@@ -1,6 +1,11 @@
 import { generateChatCompletion, MODELS } from './aiClient';
 import { generateAIResponse } from './aiClient.client';
 
+// Get the model from environment variables or use the default
+const CLAUDE_MODEL = typeof window === 'undefined' 
+  ? (process.env.ANTHROPIC_MODEL || MODELS.SONNET)
+  : (process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || MODELS.SONNET);
+
 /**
  * Generates a response using the Anthropic Claude model
  * @param messages Array of message objects with role and content
@@ -13,10 +18,10 @@ export async function generateAnthropicResponse(
     // Use the appropriate function based on environment
     if (typeof window === 'undefined') {
       // Server-side: use direct API call
-      return await generateChatCompletion(messages, MODELS.SONNET);
+      return await generateChatCompletion(messages, CLAUDE_MODEL);
     } else {
       // Client-side: use API route
-      return await generateAIResponse(messages, MODELS.SONNET);
+      return await generateAIResponse(messages, CLAUDE_MODEL);
     }
   } catch (error) {
     console.error("Error generating Anthropic response:", error);

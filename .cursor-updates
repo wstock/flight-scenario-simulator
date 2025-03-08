@@ -78,3 +78,9 @@
 - Increased NavigationDisplay height to 65vh for better visibility
 - Improved AircraftPositionDisplay with interactive range controls
 - Added maxHeight constraint to ensure proper display of navigation components
+- Fixed NavigationDisplay aspect ratio to maintain proper circular shape
+- Created specialized API logger with separate log level configuration
+- Added script to update all API routes with the new logger utility
+- Reduced API route logging by setting API log level to ERROR by default
+- Improved NavigationDisplay container with centered content and proper aspect ratio
+- Updated API response format for consistency across all endpoints

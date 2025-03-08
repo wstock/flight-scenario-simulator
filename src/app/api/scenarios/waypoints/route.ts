@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse }
-import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('WaypointsRoute');
-from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiLogger } from '@/lib/utils/logger';
 import { db } from '@/lib/db';
+
+const logger = createApiLogger('WaypointsRoute');
 
 /**
  * GET handler for retrieving waypoints for a scenario

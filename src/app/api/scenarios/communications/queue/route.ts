@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse }
-import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('QueueRoute');
-from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiLogger } from '@/lib/utils/logger';
 import { db } from '@/lib/db';
+
+const logger = createApiLogger('QueueRoute');
 
 /**
  * GET handler for retrieving communications queue for a scenario

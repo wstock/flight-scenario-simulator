@@ -1,8 +1,10 @@
 import { createApiLogger } from '@/lib/utils/logger';
-
-const logger = createApiLogger('TranscribeRoute');
 import { type NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+
+const logger = createApiLogger('TranscribeRoute');
 
 const groq = new Groq({
   apiKey: process.env.GROQ_API_KEY! ?? "",
@@ -31,3 +33,4 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+

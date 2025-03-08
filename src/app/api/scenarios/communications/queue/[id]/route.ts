@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse }
-import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('[id]Route');
-from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiLogger } from '@/lib/utils/logger';
 import { db } from '@/lib/db';
+
+const logger = createApiLogger('DynamicRoute');
 
 // Use correct config exports for Next.js 15+
 export const dynamic = 'force-dynamic';
@@ -14,11 +15,15 @@ export const preferredRegion = 'auto';
  */
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Ensure params are properly awaited when accessed
-    const { id } = context.params;
+    // Get the item ID from the URL
+    const id = params.id;
+    
+    logger.info(`Updating communication queue item ${id}...`);
+    
+    // Parse the request body
     const body = await request.json();
     const { is_sent } = body;
     
@@ -26,16 +31,14 @@ export async function PATCH(
       return NextResponse.json(
         { 
           success: false, 
-          error: 'is_sent field is required' 
+          error: 'Missing is_sent field in request body' 
         },
         { status: 400 }
       );
     }
     
-    logger.info(`Updating communication queue item ${id}...`);
-    
-    // For now, just return success since we don't have the actual table
-    // In a real implementation, this would update the database
+    // In a real implementation, we would update the database here
+    // For mock purposes, we'll just return success
     
     logger.info(`Successfully updated communication queue item ${id}`);
     
@@ -46,9 +49,8 @@ export async function PATCH(
         is_sent
       }
     });
-    
   } catch (error) {
-    console.error('API route error updating communication queue item:', error);
+    logger.error('Error updating communication queue item:', error);
     return NextResponse.json(
       { 
         success: false, 

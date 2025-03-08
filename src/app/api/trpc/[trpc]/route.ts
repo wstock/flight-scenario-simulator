@@ -1,11 +1,12 @@
 import { createApiLogger } from '@/lib/utils/logger';
-
-const logger = createApiLogger('[trpc]Route');
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { type NextRequest } from "next/server";
-
 import { appRouter } from "@/lib/api/root";
 import { createTRPCContext } from "@/lib/api/trpc";
+import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+
+const logger = createApiLogger('DynamicRoute');
 
 /**
  * This wraps the `createTRPCContext` helper and provides the required context for the tRPC API when
@@ -38,3 +39,4 @@ const handler = (req: NextRequest) =>
   });
 
 export { handler as GET, handler as POST };
+

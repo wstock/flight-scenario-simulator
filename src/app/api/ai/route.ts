@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createApiLogger } from '@/lib/utils/logger';
+import { generateChatCompletion, MODELS } from '@/lib/aiClient';
+import { db } from '@/lib/db';
 
 const logger = createApiLogger('AiRoute');
-import { generateChatCompletion, MODELS } from '@/lib/aiClient';
 
 export const runtime = 'edge';
 

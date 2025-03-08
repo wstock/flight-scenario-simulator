@@ -139,8 +139,14 @@ export default function AircraftPositionDisplay({
         </div>
       </div>
       
-      <div className="flex justify-center items-center px-4 pb-4">
-        <div className="relative aspect-square bg-black rounded-full overflow-hidden border border-gray-700" style={{ width: '100%', maxWidth: 'min(100%, calc(100vh - 12rem))' }}>
+      <div className="flex justify-center items-center p-4">
+        <div 
+          className="relative aspect-square bg-black rounded-full overflow-hidden border border-gray-700" 
+          style={{ 
+            width: '100%', 
+            maxWidth: 'calc(min(100%, 65vh) - 4rem)'
+          }}
+        >
           {/* Compass rose */}
           <div 
             className="absolute inset-0 flex items-center justify-center"

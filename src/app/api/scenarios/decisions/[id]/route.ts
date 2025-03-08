@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse }
-import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('[id]Route');
-from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
+import { createApiLogger } from '@/lib/utils/logger';
 import { db } from '@/lib/db';
+
+const logger = createApiLogger('DynamicRoute');
 
 // Use correct config exports for Next.js 15+
 export const dynamic = 'force-dynamic';
@@ -53,7 +54,7 @@ export async function GET(
     });
     
   } catch (error) {
-    console.error('API route error getting decision:', error);
+    logger.error('Error getting decision:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -94,7 +95,7 @@ export async function PATCH(
     });
     
   } catch (error) {
-    console.error('API route error updating decision:', error);
+    logger.error('Error updating decision:', error);
     return NextResponse.json(
       { 
         success: false, 

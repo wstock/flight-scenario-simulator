@@ -1,15 +1,14 @@
 /**
  * AI Client Library
  *
- * This module provides a unified interface for interacting with various AI models
- * including OpenAI, Perplexity, and Google's Gemini models.
+ * This module provides a unified interface for interacting with Anthropic's Claude models.
+ * It handles message formatting, API calls, and response parsing.
  *
- * Primary Functions:
+ * Primary Function:
  *
- * 1. generateChatCompletion(messages, model = "O1", options = {})
- *    - Main function for general AI interactions
- *    - Automatically handles routing to appropriate AI provider
- *    - Use for standard chat completions, idea generation, etc.
+ * generateChatCompletion(messages, model = "SONNET", options = {})
+ *    - Main function for AI interactions
+ *    - Uses Anthropic's Claude 3.7 Sonnet model
  *    Example:
  *    ```typescript
  *    const response = await generateChatCompletion([
@@ -17,127 +16,24 @@
  *    ]);
  *    ```
  *
- * 2. generateGeminiWebResponse(messages, model, ground = true)
- *    - Specialized function for Gemini models with web grounding
- *    - Returns both response text and source links
- *    - Use when you need factual, web-grounded responses
- *    Example:
- *    ```typescript
- *    const { text, sourceLink } = await generateGeminiWebResponse([
- *      { role: "user", content: "What's new in AI?" }
- *    ], "GEMINI_FLASH_WEB", true);
- *    ```
- *
- * 3. parseJsonResponse(response)
- *    - Utility to parse JSON from AI responses
- *    - Handles both direct JSON and code block formats
- *    - Use when expecting structured data from AI
- *    Example:
- *    ```typescript
- *    const data = parseJsonResponse(aiResponse);
- *    ```
- *
  * Available Models:
- * - O1: Default model for most use cases
- * - SONNET: Claude 3.7 Sonnet for complex reasoning
- * - PERPLEXITY_SMALL/LARGE: For web-aware responses
- * - GEMINI_FLASH_WEB: For web-grounded responses
- * - GEMINI_FLASH_THINKING: For complex reasoning tasks
+ * - SONNET: Claude 3.7 Sonnet (default)
  */
 
-import OpenAI from "openai";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import Anthropic from '@anthropic-ai/sdk';
+import { MessageParam } from '@anthropic-ai/sdk/resources/messages';
 
-// Custom type for Gemini API request
-interface GeminiGroundedResponse {
-  text: string;
-  sourceLink?: string;
-}
-
-type AIClientType = {
-  openai: OpenAI;
-};
-
-type AIClientResponse = {
-  client: AIClientType[keyof AIClientType];
-  type: keyof AIClientType;
-};
-
-export const AI_MODELS = {
-  SONNET: "claude-3-7-sonnet-latest",
-  O1: "o1-2024-12-17",
-  GPT_4O: "gpt-4o",
-  GPT_4O_MINI: "gpt-4o-mini",
-  PERPLEXITY_SMALL: "sonar",
-  PERPLEXITY_LARGE: "sonar-pro",
-  GEMINI_FLASH_WEB: "gemini-2.0-flash-exp",
-  GEMINI_FLASH_THINKING: "gemini-2.0-flash-thinking-exp-01-21",
-} as const;
-
-export type AIModel = keyof typeof AI_MODELS;
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// Initialize Anthropic client
+const anthropic = new Anthropic({
+  apiKey: process.env.ANTHROPIC_API_KEY || '',
 });
 
-const perplexity = new OpenAI({
-  apiKey: process.env.PERPLEXITY_API_KEY,
-  baseURL: "https://api.perplexity.ai",
-});
+// Available models
+export const MODELS = {
+  SONNET: 'claude-3-sonnet-20240229', // Claude 3.7 Sonnet (default)
+};
 
-const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "");
-
-function getClientForModel(model: AIModel): AIClientResponse {
-  const modelId = AI_MODELS[model];
-
-  if (modelId.includes("sonar")) {
-    return { client: perplexity, type: "openai" };
-  }
-
-  return { client: openai, type: "openai" };
-}
-
-/**
- * Generates a response from Gemini models with optional web grounding.
- * @param messages Array of message objects with role and content
- * @param model The Gemini model to use
- * @param ground Whether to enable web grounding
- * @returns Promise with text response and optional source links
- */
-export async function generateGeminiWebResponse(
-  messages: Array<{ role: "user" | "system" | "assistant"; content: string }>,
-  model: AIModel = "GEMINI_FLASH_WEB",
-  ground = true,
-): Promise<GeminiGroundedResponse> {
-  const modelId = AI_MODELS[model];
-  const geminiModel = genAI.getGenerativeModel({
-    model: modelId,
-    // @ts-ignore
-    tools: ground ? [{ googleSearch: {} }] : undefined,
-  });
-
-  // Convert messages to Gemini format
-  const prompt = messages.map((m) => m.content).join("\n");
-
-  const result = await geminiModel.generateContent(prompt);
-  const response = await result.response;
-  const text = response.text();
-
-  let sourceLink: string | undefined = undefined;
-  if (
-    ground &&
-    response.candidates?.[0]?.groundingMetadata?.searchEntryPoint
-      ?.renderedContent
-  ) {
-    sourceLink =
-      response.candidates[0].groundingMetadata.searchEntryPoint.renderedContent;
-  }
-
-  return {
-    text,
-    sourceLink,
-  };
-}
+export type AIModel = keyof typeof MODELS;
 
 export function parseJsonResponse(response: string): any {
   // First try parsing the response directly
@@ -160,39 +56,44 @@ export function parseJsonResponse(response: string): any {
   }
 }
 
+/**
+ * Generate a chat completion using the specified model
+ * 
+ * @param messages Array of message objects with role and content
+ * @param model Model to use (defaults to SONNET)
+ * @param temperature Temperature for response generation (0-1)
+ * @param maxTokens Maximum tokens to generate
+ * @returns The generated text response
+ */
 export async function generateChatCompletion(
-  messages: Array<{ role: "user" | "system" | "assistant"; content: string }>,
-  model: AIModel = "O1",
-  additionalOptions: Partial<OpenAI.ChatCompletionCreateParamsNonStreaming> = {},
+  messages: { role: string; content: string }[],
+  model: string = MODELS.SONNET,
+  temperature: number = 0.7,
+  maxTokens: number = 1000
 ): Promise<string> {
   try {
-    const modelId = AI_MODELS[model];
+    // Convert messages to Anthropic format
+    const anthropicMessages: MessageParam[] = messages.map(msg => ({
+      role: msg.role === 'user' ? 'user' : 'assistant',
+      content: msg.content
+    }));
 
-    // Handle Gemini models directly
-    if (modelId.includes("gemini")) {
-      const geminiResp = await generateGeminiWebResponse(
-        messages,
-        model,
-        false,
-      );
-      return geminiResp.text;
+    // Call Anthropic API
+    const response = await anthropic.messages.create({
+      model,
+      messages: anthropicMessages,
+      temperature,
+      max_tokens: maxTokens,
+    });
+
+    // Handle the response content properly
+    if (response.content[0].type === 'text') {
+      return response.content[0].text;
     }
-
-    // Handle OpenAI and Perplexity models
-    const { client } = getClientForModel(model);
-    const options: OpenAI.ChatCompletionCreateParamsNonStreaming = {
-      model: modelId,
-      messages,
-      ...additionalOptions,
-    };
-
-    const completion = await client.chat.completions.create(options);
-    return completion.choices[0]?.message?.content ?? "";
+    
+    return '';
   } catch (error) {
-    console.error(
-      `Error generating chat completion for model ${model}:`,
-      error,
-    );
+    console.error('Error generating chat completion:', error);
     throw error;
   }
 }

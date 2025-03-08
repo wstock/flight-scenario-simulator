@@ -1,4 +1,4 @@
-import { generateChatCompletion } from './aiClient';
+import { generateChatCompletion, MODELS } from './aiClient';
 
 /**
  * Generates a response using the Anthropic Claude model
@@ -9,8 +9,8 @@ export async function generateAnthropicResponse(
   messages: Array<{ role: "user" | "system" | "assistant"; content: string }>
 ): Promise<string> {
   try {
-    // Use the SONNET model from aiClient.ts
-    return await generateChatCompletion(messages, "SONNET");
+    // Always use the SONNET model
+    return await generateChatCompletion(messages, MODELS.SONNET);
   } catch (error) {
     console.error("Error generating Anthropic response:", error);
     throw error;

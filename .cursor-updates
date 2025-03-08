@@ -15,3 +15,7 @@
 - Implemented Scenario State Management: Decision Tree, Impact Tracking, Parameter Simulation, Real-Time Adaptation, and Scenario Evaluation
 - Created Flight Simulator UI with Scenarios page and Simulator page integrating all components
 - Fixed Prisma permission issue and updated dashboard components for better TypeScript compatibility
+- Added natural language scenario generation feature using Claude API
+- Updated AI client to exclusively use Anthropic's Claude 3.7 Sonnet model, removing OpenAI dependency
+- Installed Anthropic SDK and configured proper API integration
+- Started development and Storybook servers for testing

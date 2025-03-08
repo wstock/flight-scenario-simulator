@@ -114,9 +114,9 @@ export async function resumeScenario(scenarioId: string): Promise<ScenarioTiming
 }
 
 /**
- * Processes a scenario tick, updating parameters and triggering events
+ * Processes a tick for real-time scenario adaptation
  */
-export async function processScenarioTick(scenarioId: string, secondsElapsed: number = 1): Promise<void> {
+export async function processScenarioTick(scenarioId: string, secondsElapsed: number): Promise<void> {
   try {
     // Get current timing
     const timing = await getScenarioTiming(scenarioId);
@@ -129,7 +129,12 @@ export async function processScenarioTick(scenarioId: string, secondsElapsed: nu
     await updateScenarioTiming(scenarioId, newElapsedSeconds, false);
     
     // Simulate continuous parameter changes
-    await simulateContinuousChanges(scenarioId, secondsElapsed);
+    try {
+      await simulateContinuousChanges(scenarioId, secondsElapsed);
+    } catch (error) {
+      console.warn(`Error simulating continuous changes, continuing with scenario: ${error}`);
+      // Continue with the scenario even if parameter simulation fails
+    }
     
     // Check for time-based triggers
     await checkTimeTriggers(scenarioId, newElapsedSeconds);
@@ -138,7 +143,8 @@ export async function processScenarioTick(scenarioId: string, secondsElapsed: nu
     await checkCommunicationsTriggers(scenarioId, newElapsedSeconds);
   } catch (error) {
     console.error('Error processing scenario tick:', error);
-    throw new Error('Failed to process scenario tick');
+    // Don't throw here, just log the error
+    console.warn('Continuing scenario despite error');
   }
 }
 

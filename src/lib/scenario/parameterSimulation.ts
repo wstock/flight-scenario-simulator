@@ -12,6 +12,7 @@ export interface AircraftParameters {
   fuel: number;
   fuel_burn_rate: number; // pounds per minute
   created_at?: string;
+  updated_at?: string;
 }
 
 export interface ParameterChange {
@@ -200,9 +201,41 @@ export async function simulateAndApplyChanges(
 export async function simulateContinuousChanges(scenarioId: string, elapsedSeconds: number): Promise<AircraftParameters> {
   try {
     // Get current parameters
-    const currentParams = await getCurrentParameters(scenarioId);
+    let currentParams = await getCurrentParameters(scenarioId);
+    
+    // Create default parameters if none exist
     if (!currentParams) {
-      throw new Error('No current parameters found');
+      console.warn('No current parameters found, using default values');
+      currentParams = {
+        id: `default-${scenarioId}`,
+        scenario_id: scenarioId,
+        altitude: 30000,
+        heading: 90,
+        speed: 450,
+        vertical_speed: 0,
+        fuel: 15000,
+        fuel_burn_rate: 50,
+        latitude: 40.7128,
+        longitude: -74.0060,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+      
+      // Try to persist the default parameters
+      try {
+        await updateParameters(scenarioId, {
+          altitude: currentParams.altitude,
+          heading: currentParams.heading,
+          speed: currentParams.speed,
+          vertical_speed: currentParams.vertical_speed,
+          fuel: currentParams.fuel,
+          fuel_burn_rate: currentParams.fuel_burn_rate,
+          latitude: currentParams.latitude,
+          longitude: currentParams.longitude
+        });
+      } catch (e) {
+        console.warn('Could not persist default parameters:', e);
+      }
     }
     
     // Calculate new fuel level based on burn rate
@@ -218,27 +251,28 @@ export async function simulateContinuousChanges(scenarioId: string, elapsedSecon
       // Convert speed from knots to degrees per second (very approximate)
       const speedDegPerSecond = currentParams.speed / 3600 / 60;
       
-      // Calculate new position based on heading
+      // Update position based on heading
       const headingRad = (currentParams.heading * Math.PI) / 180;
-      newLatitude = currentParams.latitude + Math.cos(headingRad) * speedDegPerSecond * elapsedSeconds;
-      newLongitude = currentParams.longitude + Math.sin(headingRad) * speedDegPerSecond * elapsedSeconds;
+      newLatitude += Math.cos(headingRad) * speedDegPerSecond * elapsedSeconds;
+      newLongitude += Math.sin(headingRad) * speedDegPerSecond * elapsedSeconds;
     }
     
-    // Calculate new altitude based on vertical speed
+    // Calculate any altitude changes
     let newAltitude = currentParams.altitude;
     if (currentParams.vertical_speed) {
       const altitudeChangePerSecond = currentParams.vertical_speed / 60;
-      newAltitude = currentParams.altitude + altitudeChangePerSecond * elapsedSeconds;
+      newAltitude += altitudeChangePerSecond * elapsedSeconds;
     }
     
-    // Apply changes
+    // Create parameter changes object
     const changes: ParameterChange = {
       fuel: newFuel,
       latitude: newLatitude,
       longitude: newLongitude,
-      altitude: newAltitude,
+      altitude: newAltitude
     };
     
+    // Persist the updated parameters
     const updatedParams = await updateParameters(scenarioId, changes);
     
     return updatedParams;

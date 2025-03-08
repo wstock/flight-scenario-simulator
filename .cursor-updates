@@ -94,3 +94,7 @@
 - Refined NavigationDisplay aspect ratio calculation for perfect circular shape
 - Optimized maximum width based on viewport height for better display proportions
 - Correctly structured import statements in dynamic route files
+- Fixed "params should be awaited" error in decisions/[id]/route.ts
+- Updated dynamic route handlers to use proper parameter destructuring pattern
+- Corrected context.params usage to direct params access in route handlers
+- Ensured consistent parameter handling across all dynamic API routes

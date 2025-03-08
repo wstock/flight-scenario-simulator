@@ -15,11 +15,11 @@ export const preferredRegion = 'auto';
  */
 export async function GET(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Ensure params are properly awaited when accessed
-    const { id } = context.params;
+    // Get the ID directly from the destructured params
+    const id = params.id;
     
     logger.info(`Getting decision ${id}...`);
     
@@ -71,11 +71,11 @@ export async function GET(
  */
 export async function PATCH(
   request: NextRequest,
-  context: { params: { id: string } }
+  { params }: { params: { id: string } }
 ) {
   try {
-    // Ensure params are properly awaited when accessed
-    const { id } = context.params;
+    // Get the ID directly from the destructured params
+    const id = params.id;
     const body = await request.json();
     const { timeLimit } = body;
     

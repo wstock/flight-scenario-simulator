@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCheckCircle, faCircle } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '@/lib/supabase';
 import { toast } from 'react-toastify';
 
 interface DecisionOption {
@@ -61,7 +60,7 @@ export default function DecisionOptions({
   const [selectedOption, setSelectedOption] = useState<string | null>(null);
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   
-  // Set up Supabase real-time subscription for decision updates
+  // Set up polling for decision updates (replacing Supabase subscription)
   useEffect(() => {
     if (!scenarioId) {
       // Generate demo decision if no scenario ID
@@ -69,36 +68,16 @@ export default function DecisionOptions({
       return;
     }
     
-    // Subscribe to decision updates
-    const channel = supabase
-      .channel(`decisions-${scenarioId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'decisions',
-          filter: `scenario_id=eq.${scenarioId} AND is_active=eq.true`,
-        },
-        (payload) => {
-          if (payload.new) {
-            const newDecision = payload.new as DecisionPayload;
-            fetchDecision(newDecision.id);
-          } else if (payload.old && !payload.new) {
-            // Decision was removed or deactivated
-            setCurrentDecision(null);
-            setSelectedOption(null);
-            setTimeRemaining(null);
-          }
-        }
-      )
-      .subscribe();
-    
     // Initial fetch of active decision
     fetchActiveDecision();
     
+    // Set up polling interval to check for updates
+    const intervalId = setInterval(() => {
+      fetchActiveDecision();
+    }, 5000); // Poll every 5 seconds
+    
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [scenarioId]);
   
@@ -135,22 +114,23 @@ export default function DecisionOptions({
     if (!scenarioId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('decisions')
-        .select('id')
-        .eq('scenario_id', scenarioId)
-        .eq('is_active', true)
-        .single();
+      const response = await fetch(`/api/scenarios/decisions?scenarioId=${scenarioId}&isActive=true`);
       
-      if (error) {
-        if (error.code !== 'PGRST116') { // Not found error
-          throw error;
-        }
-        return; // No active decision
+      if (!response.ok) {
+        throw new Error(`Error fetching active decision: ${response.status}`);
       }
       
-      if (data) {
-        fetchDecision(data.id);
+      const result = await response.json();
+      
+      if (result.success && result.data && result.data.length > 0) {
+        // Get the first active decision
+        const activeDecisionId = result.data[0].id;
+        fetchDecision(activeDecisionId);
+      } else {
+        // No active decision
+        setCurrentDecision(null);
+        setSelectedOption(null);
+        setTimeRemaining(null);
       }
     } catch (error) {
       console.error('Error fetching active decision:', error);
@@ -160,28 +140,16 @@ export default function DecisionOptions({
   // Fetch decision details
   const fetchDecision = async (decisionId: string) => {
     try {
-      const { data, error } = await supabase
-        .from('decisions')
-        .select(`
-          id,
-          title,
-          description,
-          time_limit,
-          is_urgent,
-          decision_options (
-            id,
-            text,
-            consequences,
-            is_recommended
-          )
-        `)
-        .eq('id', decisionId)
-        .single();
+      const response = await fetch(`/api/scenarios/decisions/${decisionId}`);
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Error fetching decision details: ${response.status}`);
+      }
       
-      if (data) {
-        const decisionData = data as DecisionData;
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const decisionData = result.data as DecisionData;
         const formattedDecision: Decision = {
           id: decisionData.id,
           title: decisionData.title,
@@ -255,14 +223,22 @@ export default function DecisionOptions({
     try {
       if (scenarioId) {
         // Record decision in database
-        await supabase
-          .from('decision_responses')
-          .insert({
+        const response = await fetch(`/api/scenarios/decisions/responses`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
             decision_id: currentDecision.id,
             option_id: selectedOption,
             scenario_id: scenarioId,
             response_time: currentDecision.timeLimit ? (currentDecision.timeLimit - (timeRemaining || 0)) : null,
-          });
+          }),
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Error submitting decision: ${response.status}`);
+        }
       }
       
       // Call the callback if provided

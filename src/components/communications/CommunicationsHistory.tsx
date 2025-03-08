@@ -3,7 +3,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faHeadset, faMicrophone, faPlane } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '@/lib/supabase';
 
 interface Communication {
   id: string;
@@ -32,7 +31,7 @@ export default function CommunicationsHistory({
   const [communications, setCommunications] = useState<Communication[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
-  // Set up Supabase real-time subscription for communications updates
+  // Set up polling for communications updates (replacing Supabase subscription)
   useEffect(() => {
     if (!scenarioId) {
       // Generate demo communications if no scenario ID
@@ -40,47 +39,16 @@ export default function CommunicationsHistory({
       return;
     }
     
-    // Subscribe to communications updates
-    const channel = supabase
-      .channel(`communications-${scenarioId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'communications',
-          filter: `scenario_id=eq.${scenarioId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            // Add new communication to the list
-            const newComm: Communication = {
-              id: payload.new.id,
-              type: payload.new.type,
-              sender: payload.new.sender,
-              message: payload.new.message,
-              timestamp: payload.new.created_at,
-              isImportant: payload.new.is_important,
-            };
-            
-            setCommunications(prev => {
-              const updated = [...prev, newComm];
-              // Limit the number of items
-              return updated.slice(-maxItems);
-            });
-            
-            // Scroll to bottom
-            scrollToBottom();
-          }
-        }
-      )
-      .subscribe();
-    
     // Initial fetch of communications
     fetchCommunications();
     
+    // Set up polling interval to check for updates
+    const intervalId = setInterval(() => {
+      fetchCommunications();
+    }, 5000); // Poll every 5 seconds
+    
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [scenarioId, maxItems]);
   
@@ -89,18 +57,17 @@ export default function CommunicationsHistory({
     if (!scenarioId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('communications')
-        .select('*')
-        .eq('scenario_id', scenarioId)
-        .order('created_at', { ascending: true })
-        .limit(maxItems);
+      const response = await fetch(`/api/scenarios/communications?scenarioId=${scenarioId}&limit=${maxItems}`);
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Error fetching communications: ${response.status}`);
+      }
       
-      if (data) {
+      const result = await response.json();
+      
+      if (result.success && result.data) {
         // Transform data to our Communication format
-        const transformedComms: Communication[] = data.map(comm => ({
+        const transformedComms: Communication[] = result.data.map((comm: any) => ({
           id: comm.id,
           type: comm.type,
           sender: comm.sender,

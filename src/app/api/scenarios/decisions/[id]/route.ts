@@ -1,17 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Use correct config exports for Next.js 15+
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const preferredRegion = 'auto';
 
 /**
  * GET handler for retrieving a specific decision
+ * Using the exact parameter style required by Next.js
  */
 export async function GET(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
+    const id = context.params.id;
     
     console.log(`API route: Getting decision ${id}...`);
     
@@ -59,14 +63,15 @@ export async function GET(
 
 /**
  * PATCH handler for updating a decision
+ * Using the exact parameter style required by Next.js
  */
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-    const body = await req.json();
+    const id = context.params.id;
+    const body = await request.json();
     const { timeLimit } = body;
     
     console.log(`API route: Updating decision ${id}...`);

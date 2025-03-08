@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 
 interface Waypoint {
   id: string;
@@ -34,7 +33,7 @@ export default function WaypointsDisplay({
   const [waypoints, setWaypoints] = useState<Waypoint[]>([]);
   const [flightPath, setFlightPath] = useState<[number, number][]>([]);
   
-  // Set up Supabase real-time subscription for waypoint updates
+  // Set up polling for waypoint updates (replacing Supabase subscription)
   useEffect(() => {
     if (!scenarioId) {
       // Generate demo waypoints if no scenario ID
@@ -42,31 +41,16 @@ export default function WaypointsDisplay({
       return;
     }
     
-    // Subscribe to waypoint updates
-    const channel = supabase
-      .channel(`waypoints-${scenarioId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'waypoints',
-          filter: `scenario_id=eq.${scenarioId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            // Fetch all waypoints to ensure we have the complete set
-            fetchWaypoints();
-          }
-        }
-      )
-      .subscribe();
-    
     // Initial fetch of waypoints
     fetchWaypoints();
     
+    // Set up polling interval to check for updates
+    const intervalId = setInterval(() => {
+      fetchWaypoints();
+    }, 5000); // Poll every 5 seconds
+    
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [scenarioId]);
   
@@ -75,17 +59,17 @@ export default function WaypointsDisplay({
     if (!scenarioId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('waypoints')
-        .select('*')
-        .eq('scenario_id', scenarioId)
-        .order('sequence', { ascending: true });
+      const response = await fetch(`/api/scenarios/waypoints?scenarioId=${scenarioId}`);
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Error fetching waypoints: ${response.status}`);
+      }
       
-      if (data) {
+      const result = await response.json();
+      
+      if (result.success && result.data) {
         // Transform data to our Waypoint format
-        const transformedWaypoints: Waypoint[] = data.map(wp => ({
+        const transformedWaypoints: Waypoint[] = result.data.map((wp: any) => ({
           id: wp.id,
           name: wp.name,
           position: {

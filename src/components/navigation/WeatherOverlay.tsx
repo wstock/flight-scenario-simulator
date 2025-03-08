@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
 
 interface WeatherCell {
   intensity: 'light' | 'moderate' | 'heavy';
@@ -35,7 +34,7 @@ export default function WeatherOverlay({
 }: WeatherOverlayProps) {
   const [weatherCells, setWeatherCells] = useState<WeatherCell[]>([]);
   
-  // Set up Supabase real-time subscription for weather updates
+  // Set up polling for weather updates (replacing Supabase subscription)
   useEffect(() => {
     if (!scenarioId) {
       // Generate demo weather if no scenario ID
@@ -43,38 +42,16 @@ export default function WeatherOverlay({
       return;
     }
     
-    // Subscribe to weather updates
-    const channel = supabase
-      .channel(`weather-${scenarioId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'weather_conditions',
-          filter: `scenario_id=eq.${scenarioId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            // Parse weather data from payload
-            try {
-              const weatherData = (payload.new as WeatherData).weather_data;
-              if (weatherData && Array.isArray(weatherData)) {
-                setWeatherCells(weatherData);
-              }
-            } catch (error) {
-              console.error('Error parsing weather data:', error);
-            }
-          }
-        }
-      )
-      .subscribe();
-    
     // Initial fetch of weather data
     fetchWeatherData();
     
+    // Set up polling interval to check for updates
+    const intervalId = setInterval(() => {
+      fetchWeatherData();
+    }, 5000); // Poll every 5 seconds
+    
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
   }, [scenarioId]);
   
@@ -83,16 +60,16 @@ export default function WeatherOverlay({
     if (!scenarioId) return;
     
     try {
-      const { data, error } = await supabase
-        .from('weather_conditions')
-        .select('weather_data')
-        .eq('scenario_id', scenarioId)
-        .single();
+      const response = await fetch(`/api/scenarios/weather?scenarioId=${scenarioId}`);
       
-      if (error) throw error;
+      if (!response.ok) {
+        throw new Error(`Error fetching weather data: ${response.status}`);
+      }
       
-      if (data && data.weather_data) {
-        setWeatherCells(data.weather_data as WeatherCell[]);
+      const result = await response.json();
+      
+      if (result.success && result.data && result.data.weather_data) {
+        setWeatherCells(result.data.weather_data as WeatherCell[]);
       }
     } catch (error) {
       console.error('Error fetching weather data:', error);

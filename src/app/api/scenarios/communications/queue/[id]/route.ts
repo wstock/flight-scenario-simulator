@@ -1,18 +1,22 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
 
+// Use correct config exports for Next.js 15+
 export const dynamic = 'force-dynamic';
+export const runtime = 'nodejs';
+export const preferredRegion = 'auto';
 
 /**
  * PATCH handler for updating a communication queue item
+ * Using the exact parameter style required by Next.js
  */
 export async function PATCH(
-  req: NextRequest,
-  { params }: { params: { id: string } }
+  request: NextRequest,
+  context: { params: { id: string } }
 ) {
   try {
-    const id = params.id;
-    const body = await req.json();
+    const id = context.params.id;
+    const body = await request.json();
     const { is_sent } = body;
     
     if (is_sent === undefined) {

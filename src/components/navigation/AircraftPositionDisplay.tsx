@@ -139,62 +139,64 @@ export default function AircraftPositionDisplay({
         </div>
       </div>
       
-      <div className="relative w-full aspect-square bg-black rounded-full overflow-hidden border border-gray-700 mx-auto" style={{ maxHeight: 'calc(100% - 3rem)' }}>
-        {/* Compass rose */}
-        <div 
-          className="absolute inset-0 flex items-center justify-center"
-          style={{ transform: compassRotation }}
-        >
-          {/* Cardinal directions */}
-          <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs text-gray-400">N</div>
-          <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">E</div>
-          <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-400">S</div>
-          <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">W</div>
-          
-          {/* Compass lines */}
-          <div className="absolute h-full w-[1px] bg-gray-700"></div>
-          <div className="absolute w-full h-[1px] bg-gray-700"></div>
-          <div className="absolute h-full w-[1px] bg-gray-700 rotate-45"></div>
-          <div className="absolute w-full h-[1px] bg-gray-700 rotate-45"></div>
-        </div>
-        
-        {/* Range rings */}
-        {rangeRings.map((ringRange) => (
+      <div className="flex justify-center items-center px-4 pb-4">
+        <div className="relative aspect-square bg-black rounded-full overflow-hidden border border-gray-700" style={{ width: '100%', maxWidth: 'min(100%, calc(100vh - 12rem))' }}>
+          {/* Compass rose */}
           <div 
-            key={ringRange}
-            className="absolute rounded-full border border-gray-700"
-            style={{
-              top: '50%',
-              left: '50%',
-              transform: 'translate(-50%, -50%)',
-              width: `${(ringRange / displayRange) * 100}%`,
-              height: `${(ringRange / displayRange) * 100}%`,
-            }}
+            className="absolute inset-0 flex items-center justify-center"
+            style={{ transform: compassRotation }}
           >
-            <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] text-gray-500">
-              {ringRange}
-            </span>
+            {/* Cardinal directions */}
+            <div className="absolute top-2 left-1/2 -translate-x-1/2 text-xs text-gray-400">N</div>
+            <div className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">E</div>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 text-xs text-gray-400">S</div>
+            <div className="absolute left-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">W</div>
+            
+            {/* Compass lines */}
+            <div className="absolute h-full w-[1px] bg-gray-700"></div>
+            <div className="absolute w-full h-[1px] bg-gray-700"></div>
+            <div className="absolute h-full w-[1px] bg-gray-700 rotate-45"></div>
+            <div className="absolute w-full h-[1px] bg-gray-700 rotate-45"></div>
           </div>
-        ))}
-        
-        {/* Aircraft symbol - always in center for ND display */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-yellow-500">
-          <FontAwesomeIcon 
-            icon={faPlane} 
-            className="text-xl"
-            style={{ transform: `rotate(${displayHeading}deg)` }}
-          />
-        </div>
-        
-        {/* Position readout */}
-        <div className="absolute bottom-2 left-2 text-[10px] text-gray-400">
-          <div>LAT: {position.latitude.toFixed(4)}°</div>
-          <div>LON: {position.longitude.toFixed(4)}°</div>
-        </div>
-        
-        {/* Heading readout */}
-        <div className="absolute bottom-2 right-2 text-[10px] text-gray-400">
-          <div>HDG: {displayHeading.toFixed(0).padStart(3, '0')}°</div>
+          
+          {/* Range rings */}
+          {rangeRings.map((ringRange) => (
+            <div 
+              key={ringRange}
+              className="absolute rounded-full border border-gray-700"
+              style={{
+                top: '50%',
+                left: '50%',
+                transform: 'translate(-50%, -50%)',
+                width: `${(ringRange / displayRange) * 100}%`,
+                height: `${(ringRange / displayRange) * 100}%`,
+              }}
+            >
+              <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] text-gray-500">
+                {ringRange}
+              </span>
+            </div>
+          ))}
+          
+          {/* Aircraft symbol - always in center for ND display */}
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-yellow-500">
+            <FontAwesomeIcon 
+              icon={faPlane} 
+              className="text-xl"
+              style={{ transform: `rotate(${displayHeading}deg)` }}
+            />
+          </div>
+          
+          {/* Position readout */}
+          <div className="absolute bottom-2 left-2 text-[10px] text-gray-400">
+            <div>LAT: {position.latitude.toFixed(4)}°</div>
+            <div>LON: {position.longitude.toFixed(4)}°</div>
+          </div>
+          
+          {/* Heading readout */}
+          <div className="absolute bottom-2 right-2 text-[10px] text-gray-400">
+            <div>HDG: {displayHeading.toFixed(0).padStart(3, '0')}°</div>
+          </div>
         </div>
       </div>
     </div>

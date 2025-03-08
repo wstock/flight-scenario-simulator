@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('QueueRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting communications queue for scenario ${scenarioId}...`);
+    logger.info(`Getting communications queue for scenario ${scenarioId}...`);
     
     // For now, return mock data since we don't have the actual table
     // In a real implementation, this would query the database
@@ -59,7 +61,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Successfully retrieved communications queue for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved communications queue for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,

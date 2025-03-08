@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('Decision-nodesRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -21,7 +23,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting decision nodes for scenario ${scenarioId}...`);
+    logger.info(`Getting decision nodes for scenario ${scenarioId}...`);
     
     // For now, return mock data since we don't have the actual table
     // In a real implementation, this would query the database
@@ -88,7 +90,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Successfully retrieved decision nodes for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved decision nodes for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,
@@ -125,12 +127,12 @@ export async function PATCH(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Updating decision node ${nodeId} for scenario ${scenarioId}...`);
+    logger.info(`Updating decision node ${nodeId} for scenario ${scenarioId}...`);
     
     // For now, just return success since we don't have the actual table
     // In a real implementation, this would update the database
     
-    console.log(`API route: Successfully updated decision node ${nodeId} for scenario ${scenarioId}`);
+    logger.info(`Successfully updated decision node ${nodeId} for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,

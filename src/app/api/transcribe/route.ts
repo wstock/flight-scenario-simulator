@@ -1,3 +1,6 @@
+import { createApiLogger } from '@/lib/utils/logger';
+
+const logger = createApiLogger('TranscribeRoute');
 import { type NextRequest, NextResponse } from "next/server";
 import Groq from "groq-sdk";
 

@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createApiLogger } from '@/lib/utils/logger';
+
+const logger = createApiLogger('ParametersRoute');
 
 /**
  * GET handler for retrieving scenario parameters
@@ -19,7 +22,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting parameters for scenario ${scenarioId}...`);
+    logger.info(`Getting parameters for scenario ${scenarioId}...`);
     
     // Check if the scenario exists
     const scenario = await (db as any).scenario.findUnique({
@@ -56,14 +59,14 @@ export async function GET(req: NextRequest) {
       fuel_burn_rate: scenario.fuel_burn_rate
     };
     
-    console.log(`API route: Successfully retrieved parameters for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved parameters for scenario ${scenarioId}`);
     
     return NextResponse.json({ 
       success: true, 
-      parameters 
+      data: parameters 
     });
   } catch (error) {
-    console.error('API route: Error getting scenario parameters:', error);
+    logger.error('Error getting scenario parameters:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -102,7 +105,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Updating parameters for scenario ${scenarioId}...`);
+    logger.info(`Updating parameters for scenario ${scenarioId}...`);
     
     // Check if the scenario exists
     const scenario = await (db as any).scenario.findUnique({
@@ -142,14 +145,14 @@ export async function PATCH(req: NextRequest) {
       ...changes
     };
     
-    console.log(`API route: Successfully updated parameters for scenario ${scenarioId}`);
+    logger.info(`Successfully updated parameters for scenario ${scenarioId}`);
     
     return NextResponse.json({ 
       success: true, 
-      parameters: updatedParameters 
+      data: updatedParameters 
     });
   } catch (error) {
-    console.error('API route: Error updating scenario parameters:', error);
+    logger.error('Error updating scenario parameters:', error);
     return NextResponse.json(
       { 
         success: false, 

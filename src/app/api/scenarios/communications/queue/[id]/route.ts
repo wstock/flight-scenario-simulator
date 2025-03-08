@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('[id]Route');
+from 'next/server';
 import { db } from '@/lib/db';
 
 // Use correct config exports for Next.js 15+
@@ -30,12 +32,12 @@ export async function PATCH(
       );
     }
     
-    console.log(`API route: Updating communication queue item ${id}...`);
+    logger.info(`Updating communication queue item ${id}...`);
     
     // For now, just return success since we don't have the actual table
     // In a real implementation, this would update the database
     
-    console.log(`API route: Successfully updated communication queue item ${id}`);
+    logger.info(`Successfully updated communication queue item ${id}`);
     
     return NextResponse.json({
       success: true,

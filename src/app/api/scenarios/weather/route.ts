@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('WeatherRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting weather conditions for scenario ${scenarioId}...`);
+    logger.info(`Getting weather conditions for scenario ${scenarioId}...`);
     
     // For now, return mock data since we don't have the actual table
     // In a real implementation, this would query the database
@@ -40,7 +42,7 @@ export async function GET(req: NextRequest) {
       }
     };
     
-    console.log(`API route: Successfully retrieved weather conditions for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved weather conditions for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('ScenariosRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -20,14 +22,14 @@ export async function GET(req: NextRequest) {
       }
     });
     
-    console.log(`API route: Found ${scenarios.length} scenarios`);
+    logger.info(`Found ${scenarios.length} scenarios`);
     
     return NextResponse.json({ 
       success: true, 
       scenarios 
     });
   } catch (error) {
-    console.error('API route: Error listing scenarios:', error);
+    logger.error('Error listing scenarios:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -57,7 +59,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
     
-    console.log(`API route: ${action === 'deactivate' ? 'Deactivating' : 'Activating'} scenario ${id}...`);
+    logger.info(`${action === 'deactivate' ? 'Deactivating' : 'Activating'} scenario ${id}...`);
     
     // Get the scenario
     const scenario = await (db as any).scenario.findUnique({
@@ -92,7 +94,7 @@ export async function PATCH(req: NextRequest) {
         data: { is_active: false }
       });
       
-      console.log(`API route: Scenario ${id} deactivated successfully`);
+      logger.info(`Scenario ${id} deactivated successfully`);
     } else {
       // Activate the scenario
       await (db as any).scenario.update({
@@ -111,7 +113,7 @@ export async function PATCH(req: NextRequest) {
         }
       }
       
-      console.log(`API route: Scenario ${id} activated successfully`);
+      logger.info(`Scenario ${id} activated successfully`);
     }
     
     return NextResponse.json({ 
@@ -168,7 +170,7 @@ export async function POST(req: NextRequest) {
       }
     });
     
-    console.log(`API route: Created scenario with ID: ${scenario.id}`);
+    logger.info(`Created scenario with ID: ${scenario.id}`);
     
     // Create waypoints if provided
     if (data.waypoints && Array.isArray(data.waypoints)) {
@@ -256,7 +258,7 @@ export async function POST(req: NextRequest) {
       id: scenario.id 
     });
   } catch (error) {
-    console.error('API route: Error saving scenario:', error);
+    logger.error('Error saving scenario:', error);
     return NextResponse.json(
       { 
         success: false, 

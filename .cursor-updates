@@ -70,3 +70,11 @@
 - Improved NavigationDisplay layout with flex-col and flex-grow for proper height distribution
 - Increased NavigationDisplay container height from 50vh to 60vh for better visibility
 - Added more spacing between NavigationDisplay and DecisionOptions components
+- Fixed NavigationDisplay layout by removing duplicate headers and range controls
+- Implemented centralized logging system with configurable log levels
+- Added logger utility with support for different log levels (ERROR, WARN, INFO, DEBUG, VERBOSE)
+- Reduced console logging by setting default log level to WARN in development
+- Updated all navigation components to use the new logger utility
+- Increased NavigationDisplay height to 65vh for better visibility
+- Improved AircraftPositionDisplay with interactive range controls
+- Added maxHeight constraint to ensure proper display of navigation components

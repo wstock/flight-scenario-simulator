@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('TimingRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -19,7 +21,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting timing for scenario ${scenarioId}...`);
+    logger.info(`Getting timing for scenario ${scenarioId}...`);
     
     // Check if the scenario exists and is active
     const scenario = await (db as any).scenario.findUnique({
@@ -60,14 +62,14 @@ export async function GET(req: NextRequest) {
       elapsed_seconds: 0 // Default to 0, this would be updated in a real implementation
     };
     
-    console.log(`API route: Successfully retrieved timing for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved timing for scenario ${scenarioId}`);
     
     return NextResponse.json({ 
       success: true, 
       timing 
     });
   } catch (error) {
-    console.error('API route: Error getting scenario timing:', error);
+    logger.error('Error getting scenario timing:', error);
     return NextResponse.json(
       { 
         success: false, 
@@ -96,7 +98,7 @@ export async function PATCH(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Updating timing for scenario ${scenarioId}...`);
+    logger.info(`Updating timing for scenario ${scenarioId}...`);
     
     // Check if the scenario exists
     const scenario = await (db as any).scenario.findUnique({
@@ -129,14 +131,14 @@ export async function PATCH(req: NextRequest) {
       elapsed_seconds: elapsedSeconds || 0
     };
     
-    console.log(`API route: Successfully updated timing for scenario ${scenarioId}`);
+    logger.info(`Successfully updated timing for scenario ${scenarioId}`);
     
     return NextResponse.json({ 
       success: true, 
       timing 
     });
   } catch (error) {
-    console.error('API route: Error updating scenario timing:', error);
+    logger.error('Error updating scenario timing:', error);
     return NextResponse.json(
       { 
         success: false, 

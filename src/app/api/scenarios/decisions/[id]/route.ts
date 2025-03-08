@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('[id]Route');
+from 'next/server';
 import { db } from '@/lib/db';
 
 // Use correct config exports for Next.js 15+
@@ -18,7 +20,7 @@ export async function GET(
     // Ensure params are properly awaited when accessed
     const { id } = context.params;
     
-    console.log(`API route: Getting decision ${id}...`);
+    logger.info(`Getting decision ${id}...`);
     
     // For now, return mock data since we don't have the actual table
     // In a real implementation, this would query the database
@@ -43,7 +45,7 @@ export async function GET(
       ]
     };
     
-    console.log(`API route: Successfully retrieved decision ${id}`);
+    logger.info(`Successfully retrieved decision ${id}`);
     
     return NextResponse.json({
       success: true,
@@ -76,12 +78,12 @@ export async function PATCH(
     const body = await request.json();
     const { timeLimit } = body;
     
-    console.log(`API route: Updating decision ${id}...`);
+    logger.info(`Updating decision ${id}...`);
     
     // For now, just return success since we don't have the actual table
     // In a real implementation, this would update the database
     
-    console.log(`API route: Successfully updated decision ${id}`);
+    logger.info(`Successfully updated decision ${id}`);
     
     return NextResponse.json({
       success: true,

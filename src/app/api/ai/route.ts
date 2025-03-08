@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('AiRoute');
+from 'next/server';
 import { generateChatCompletion, MODELS } from '@/lib/aiClient';
 
 export const runtime = 'edge';
@@ -17,7 +19,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    console.log(`API route: Processing request with model ${model}`);
+    logger.info(`Processing request with model ${model}`);
     
     try {
       const response = await generateChatCompletion(
@@ -27,11 +29,11 @@ export async function POST(req: NextRequest) {
         maxTokens
       );
       
-      console.log(`API route: Successfully generated response (${response.length} chars)`);
+      logger.info(`Successfully generated response (${response.length} chars)`);
       
       return NextResponse.json({ response });
     } catch (aiError) {
-      console.error('API route: Error generating AI response:', aiError);
+      logger.error('Error generating AI response:', aiError);
       
       // Provide more specific error information
       const errorMessage = aiError instanceof Error 
@@ -48,7 +50,7 @@ export async function POST(req: NextRequest) {
       );
     }
   } catch (error) {
-    console.error('API route: Error processing request:', error);
+    logger.error('Error processing request:', error);
     
     return NextResponse.json(
       { 

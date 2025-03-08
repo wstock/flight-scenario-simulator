@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('AdaptationsRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -19,7 +21,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Creating adaptation for scenario ${scenarioId}...`);
+    logger.info(`Creating adaptation for scenario ${scenarioId}...`);
     
     // For now, just return success since we don't have the actual table
     // In a real implementation, this would insert into the database
@@ -30,7 +32,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString()
     };
     
-    console.log(`API route: Successfully created adaptation for scenario ${scenarioId}`);
+    logger.info(`Successfully created adaptation for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,

@@ -1,4 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('ResponsesRoute');
+from 'next/server';
 import { db } from '@/lib/db';
 
 /**
@@ -20,7 +22,7 @@ export async function GET(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Getting decision responses for scenario ${scenarioId}...`);
+    logger.info(`Getting decision responses for scenario ${scenarioId}...`);
     
     // For now, return mock data since we don't have the actual table
     // In a real implementation, this would query the database
@@ -79,7 +81,7 @@ export async function GET(req: NextRequest) {
       }
     ];
     
-    console.log(`API route: Successfully retrieved decision responses for scenario ${scenarioId}`);
+    logger.info(`Successfully retrieved decision responses for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,
@@ -116,7 +118,7 @@ export async function POST(req: NextRequest) {
       );
     }
     
-    console.log(`API route: Creating decision response for scenario ${scenarioId}...`);
+    logger.info(`Creating decision response for scenario ${scenarioId}...`);
     
     // For now, just return success since we don't have the actual table
     // In a real implementation, this would insert into the database
@@ -128,7 +130,7 @@ export async function POST(req: NextRequest) {
       created_at: new Date().toISOString()
     };
     
-    console.log(`API route: Successfully created decision response for scenario ${scenarioId}`);
+    logger.info(`Successfully created decision response for scenario ${scenarioId}`);
     
     return NextResponse.json({
       success: true,

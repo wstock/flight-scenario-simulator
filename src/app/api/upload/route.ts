@@ -1,4 +1,6 @@
-import { NextResponse } from "next/server";
+import { NextResponse }
+import { createApiLogger } from '@/lib/utils/logger';  const logger = createApiLogger('UploadRoute');
+from "next/server";
 import { uploadFile } from "@/lib/storage";
 
 export async function POST(req: Request) {

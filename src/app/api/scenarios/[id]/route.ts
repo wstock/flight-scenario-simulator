@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/db';
+import { createApiLogger } from '@/lib/utils/logger';
+
+const logger = createApiLogger('ScenarioRoute');
 
 // Use correct config exports for Next.js 15+
 export const dynamic = 'force-dynamic';
@@ -17,7 +20,7 @@ export async function GET(
   try {
     // Ensure params are properly awaited when accessed
     const { id } = context.params;
-    console.log(`API route: Loading scenario ${id}...`);
+    logger.info(`Loading scenario ${id}...`);
     
     // Fetch the main scenario data
     const scenarioData = await (db as any).scenario.findUnique({
@@ -51,7 +54,7 @@ export async function GET(
       try {
         return JSON.parse(wc.weather_data.toString());
       } catch (e) {
-        console.error('Error parsing weather data:', e);
+        logger.error('Error parsing weather data:', e);
         return {
           intensity: 'light',
           position: { x: 0, y: 0 },
@@ -96,14 +99,14 @@ export async function GET(
       })),
     };
     
-    console.log(`API route: Successfully loaded scenario ${id}`);
+    logger.info(`Successfully loaded scenario ${id}`);
     
     return NextResponse.json({ 
       success: true, 
       scenario 
     });
   } catch (error) {
-    console.error('API route: Error loading scenario:', error);
+    logger.error('Error loading scenario:', error);
     return NextResponse.json(
       { 
         success: false, 

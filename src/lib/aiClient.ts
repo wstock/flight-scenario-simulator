@@ -39,7 +39,7 @@
  *
  * Available Models:
  * - O1: Default model for most use cases
- * - SONNET: Claude 3.5 Sonnet for complex reasoning
+ * - SONNET: Claude 3.7 Sonnet for complex reasoning
  * - PERPLEXITY_SMALL/LARGE: For web-aware responses
  * - GEMINI_FLASH_WEB: For web-grounded responses
  * - GEMINI_FLASH_THINKING: For complex reasoning tasks
@@ -64,7 +64,7 @@ type AIClientResponse = {
 };
 
 export const AI_MODELS = {
-  SONNET: "claude-3-5-sonnet-20241022",
+  SONNET: "claude-3-7-sonnet-latest",
   O1: "o1-2024-12-17",
   GPT_4O: "gpt-4o",
   GPT_4O_MINI: "gpt-4o-mini",

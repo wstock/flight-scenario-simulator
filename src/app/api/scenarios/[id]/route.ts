@@ -15,7 +15,8 @@ export async function GET(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    // Ensure params are properly awaited when accessed
+    const { id } = context.params;
     console.log(`API route: Loading scenario ${id}...`);
     
     // Fetch the main scenario data

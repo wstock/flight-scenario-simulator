@@ -15,7 +15,8 @@ export async function PATCH(
   context: { params: { id: string } }
 ) {
   try {
-    const id = context.params.id;
+    // Ensure params are properly awaited when accessed
+    const { id } = context.params;
     const body = await request.json();
     const { is_sent } = body;
     

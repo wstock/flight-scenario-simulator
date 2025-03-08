@@ -73,8 +73,8 @@ export default function WaypointsDisplay({
           id: wp.id,
           name: wp.name,
           position: {
-            x: wp.position_x,
-            y: wp.position_y,
+            x: typeof wp.position_x === 'number' ? wp.position_x : 0,
+            y: typeof wp.position_y === 'number' ? wp.position_y : 0,
           },
           isActive: wp.is_active,
           isPassed: wp.is_passed,
@@ -83,16 +83,30 @@ export default function WaypointsDisplay({
         
         setWaypoints(transformedWaypoints);
         
-        // Generate flight path from waypoints
-        const path = transformedWaypoints.map(wp => [
-          wp.position.x,
-          wp.position.y,
-        ]) as [number, number][];
+        // Generate flight path from waypoints with validation
+        const path = transformedWaypoints
+          .filter(wp => 
+            typeof wp.position?.x === 'number' && 
+            !isNaN(wp.position.x) && 
+            typeof wp.position?.y === 'number' && 
+            !isNaN(wp.position.y)
+          )
+          .map(wp => [
+            wp.position.x,
+            wp.position.y,
+          ]) as [number, number][];
         
         setFlightPath(path);
+      } else {
+        // Reset to empty if no data
+        setWaypoints([]);
+        setFlightPath([]);
       }
     } catch (error) {
       console.error('Error fetching waypoints:', error);
+      // Reset on error
+      setWaypoints([]);
+      setFlightPath([]);
     }
   };
   
@@ -143,15 +157,27 @@ export default function WaypointsDisplay({
   const generatePathData = () => {
     if (flightPath.length < 2) return '';
     
-    // Convert relative coordinates to SVG coordinates (percentage-based)
-    const svgPath = flightPath.map((point, index) => {
-      const x = (point[0] * 50) + 50; // Convert -1...1 to 0...100
-      const y = (point[1] * 50) + 50; // Convert -1...1 to 0...100
+    try {
+      // Convert relative coordinates to SVG coordinates (percentage-based)
+      const svgPath = flightPath.map((point, index) => {
+        // Ensure we have valid numbers
+        if (!Array.isArray(point) || point.length !== 2 || 
+            typeof point[0] !== 'number' || isNaN(point[0]) || 
+            typeof point[1] !== 'number' || isNaN(point[1])) {
+          return '';
+        }
+        
+        const x = (point[0] * 50) + 50; // Convert -1...1 to 0...100
+        const y = (point[1] * 50) + 50; // Convert -1...1 to 0...100
+        
+        return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
+      }).filter(Boolean).join(' ');
       
-      return `${index === 0 ? 'M' : 'L'} ${x} ${y}`;
-    }).join(' ');
-    
-    return svgPath;
+      return svgPath || 'M 0 0'; // Provide a fallback valid path if empty
+    } catch (error) {
+      console.error('Error generating SVG path:', error);
+      return 'M 0 0'; // Default valid path on error
+    }
   };
   
   return (

@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlane } from '@fortawesome/free-solid-svg-icons';
-import { supabase } from '@/lib/supabase';
 
 interface Position {
   latitude: number;
@@ -32,37 +31,54 @@ export default function AircraftPositionDisplay({
   const [position, setPosition] = useState<Position>(initialPosition);
   const [displayHeading, setDisplayHeading] = useState(heading);
   
-  // Set up Supabase real-time subscription for position updates
+  // Set up polling for position updates (replacing Supabase subscription)
   useEffect(() => {
     if (!scenarioId) return;
     
-    // Subscribe to position updates
-    const channel = supabase
-      .channel(`aircraft-position-${scenarioId}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'aircraft_positions',
-          filter: `scenario_id=eq.${scenarioId}`,
-        },
-        (payload) => {
-          if (payload.new) {
-            setPosition({
-              latitude: payload.new.latitude,
-              longitude: payload.new.longitude,
-            });
-            setDisplayHeading(payload.new.heading || displayHeading);
-          }
-        }
-      )
-      .subscribe();
+    // Initial fetch of position data
+    fetchPositionData();
+    
+    // Set up polling interval to check for updates
+    const intervalId = setInterval(() => {
+      fetchPositionData();
+    }, 5000); // Poll every 5 seconds
     
     return () => {
-      supabase.removeChannel(channel);
+      clearInterval(intervalId);
     };
-  }, [scenarioId, displayHeading]);
+  }, [scenarioId]);
+  
+  // Fetch position data from API
+  const fetchPositionData = async () => {
+    if (!scenarioId) return;
+    
+    try {
+      const response = await fetch(`/api/scenarios/parameters?scenarioId=${scenarioId}`);
+      
+      if (!response.ok) {
+        throw new Error(`Error fetching position data: ${response.status}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success && result.data) {
+        const { latitude, longitude, heading: newHeading } = result.data;
+        
+        if (typeof latitude === 'number' && typeof longitude === 'number') {
+          setPosition({
+            latitude,
+            longitude
+          });
+        }
+        
+        if (typeof newHeading === 'number') {
+          setDisplayHeading(newHeading);
+        }
+      }
+    } catch (error) {
+      console.error('Error fetching position data:', error);
+    }
+  };
   
   // For demo purposes, simulate aircraft movement
   useEffect(() => {

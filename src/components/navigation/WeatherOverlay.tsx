@@ -69,10 +69,22 @@ export default function WeatherOverlay({
       const result = await response.json();
       
       if (result.success && result.data && result.data.weather_data) {
-        setWeatherCells(result.data.weather_data as WeatherCell[]);
+        // Make sure we're working with an array of weather cells
+        const weatherData = result.data.weather_data;
+        
+        if (Array.isArray(weatherData)) {
+          setWeatherCells(weatherData as WeatherCell[]);
+        } else {
+          console.error('Weather data is not an array:', weatherData);
+          setWeatherCells([]);
+        }
+      } else {
+        // Set empty array if no weather data
+        setWeatherCells([]);
       }
     } catch (error) {
       console.error('Error fetching weather data:', error);
+      setWeatherCells([]);
     }
   };
   
@@ -123,7 +135,7 @@ export default function WeatherOverlay({
         className="absolute inset-0"
         style={{ transform: compassRotation }}
       >
-        {weatherCells.map((cell, index) => (
+        {Array.isArray(weatherCells) && weatherCells.map((cell, index) => (
           <div
             key={index}
             className="absolute rounded-full blur-sm"

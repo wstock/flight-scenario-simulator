@@ -11,9 +11,23 @@ interface WeatherCell {
   size: number; // Size in relative units (0-1)
 }
 
+interface WeatherCondition {
+  visibility: number; // miles
+  wind_speed: number; // knots
+  wind_direction: number; // degrees
+  temperature: number; // celsius
+  precipitation: string; // none, light, moderate, heavy
+  cloud_cover: string; // clear, few, scattered, broken, overcast
+  turbulence: string; // none, light, moderate, severe
+  icing: string; // none, light, moderate, severe
+  thunderstorms: boolean;
+  ceiling: number; // feet
+}
+
 interface WeatherData {
-  weather_data: WeatherCell[];
+  id: string;
   scenario_id: string;
+  weather_data: WeatherCondition | WeatherCell[];
 }
 
 interface WeatherOverlayProps {
@@ -68,14 +82,22 @@ export default function WeatherOverlay({
       
       const result = await response.json();
       
-      if (result.success && result.data && result.data.weather_data) {
-        // Make sure we're working with an array of weather cells
+      if (result.success && result.data) {
+        // Extract weather data from the response
         const weatherData = result.data.weather_data;
         
         if (Array.isArray(weatherData)) {
+          // If it's already an array of weather cells, use it directly
           setWeatherCells(weatherData as WeatherCell[]);
+        } else if (weatherData && typeof weatherData === 'object') {
+          // If it's a weather condition object, generate cells based on the conditions
+          console.log('Weather data is a condition object:', weatherData);
+          
+          // Generate weather cells based on the weather conditions
+          const cells = generateWeatherCellsFromCondition(weatherData as WeatherCondition);
+          setWeatherCells(cells);
         } else {
-          console.error('Weather data is not an array:', weatherData);
+          console.error('Weather data is not a valid format:', weatherData);
           setWeatherCells([]);
         }
       } else {
@@ -86,6 +108,63 @@ export default function WeatherOverlay({
       console.error('Error fetching weather data:', error);
       setWeatherCells([]);
     }
+  };
+  
+  // Generate weather cells from a weather condition object
+  const generateWeatherCellsFromCondition = (condition: WeatherCondition): WeatherCell[] => {
+    const cells: WeatherCell[] = [];
+    
+    // Only generate cells if there's some form of precipitation or thunderstorms
+    if (condition.precipitation !== 'none' || condition.thunderstorms) {
+      // Create different patterns based on conditions
+      
+      // For precipitation
+      if (condition.precipitation !== 'none') {
+        const intensity = condition.precipitation as 'light' | 'moderate' | 'heavy';
+        
+        // Number of cells based on intensity
+        const cellCount = intensity === 'light' ? 3 : 
+                          intensity === 'moderate' ? 6 : 9;
+        
+        // Generate random cells
+        for (let i = 0; i < cellCount; i++) {
+          // Random position within the display range
+          const angle = Math.random() * Math.PI * 2;
+          const distance = Math.random() * 0.8; // max 80% from center
+          
+          cells.push({
+            intensity,
+            position: {
+              x: Math.cos(angle) * distance,
+              y: Math.sin(angle) * distance
+            },
+            size: 0.1 + (Math.random() * 0.15) // Size between 0.1 and 0.25
+          });
+        }
+      }
+      
+      // Add thunderstorm cells if present
+      if (condition.thunderstorms) {
+        // Add 2-3 thunderstorm cells (represented as 'heavy')
+        const thunderCount = 2 + Math.floor(Math.random() * 2);
+        
+        for (let i = 0; i < thunderCount; i++) {
+          const angle = Math.random() * Math.PI * 2;
+          const distance = Math.random() * 0.7; // max 70% from center
+          
+          cells.push({
+            intensity: 'heavy',
+            position: {
+              x: Math.cos(angle) * distance,
+              y: Math.sin(angle) * distance
+            },
+            size: 0.2 + (Math.random() * 0.15) // Size between 0.2 and 0.35
+          });
+        }
+      }
+    }
+    
+    return cells;
   };
   
   // Generate demo weather cells for preview

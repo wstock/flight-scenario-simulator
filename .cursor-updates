@@ -29,3 +29,4 @@
 - Added database schema for flight simulator with Prisma models
 - Migrated from direct Supabase calls to Prisma client for database operations
 - Enhanced JSON parsing with sanitization and fallback mechanisms
+- Created server-side API route for database operations to fix browser compatibility issues

@@ -1,6 +1,5 @@
 import { generateAnthropicResponse } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
-import { prisma } from '@/lib/db';
 
 export interface ScenarioParams {
   aircraft: string;
@@ -321,113 +320,40 @@ function constructJsonFromText(text: string): any | null {
 }
 
 /**
- * Saves a generated scenario to the database
+ * Saves a generated scenario to the database via API route
  */
 export async function saveScenario(scenario: Scenario): Promise<string> {
   try {
-    console.log('Saving scenario to database using Prisma...');
+    console.log('Saving scenario to database via API route...');
     
-    // First, insert the main scenario record
-    const scenarioRecord = await prisma.scenario.create({
-      data: {
-        title: scenario.title,
-        description: scenario.description,
-        aircraft: scenario.aircraft,
-        departure: scenario.departure,
-        arrival: scenario.arrival,
-        initial_altitude: scenario.initial_altitude,
-        initial_heading: scenario.initial_heading,
-        initial_fuel: scenario.initial_fuel,
-        max_fuel: scenario.max_fuel,
-        fuel_burn_rate: scenario.fuel_burn_rate,
+    const response = await fetch('/api/scenarios', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
       },
+      body: JSON.stringify(scenario),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      console.error('API error response:', errorData);
+      
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`API error: ${errorMessage}`);
+    }
+
+    const data = await response.json().catch(() => {
+      console.error('Failed to parse JSON response from API');
+      throw new Error('Failed to parse response from API');
     });
     
-    const scenarioId = scenarioRecord.id;
-    console.log(`Created scenario with ID: ${scenarioId}`);
-    
-    // Insert waypoints
-    if (scenario.waypoints && scenario.waypoints.length > 0) {
-      console.log(`Adding ${scenario.waypoints.length} waypoints...`);
-      
-      await prisma.waypoint.createMany({
-        data: scenario.waypoints.map(waypoint => ({
-          scenario_id: scenarioId,
-          name: waypoint.name,
-          position_x: waypoint.position_x,
-          position_y: waypoint.position_y,
-          sequence: waypoint.sequence,
-          is_active: waypoint.is_active || false,
-          is_passed: waypoint.is_passed || false,
-          eta: waypoint.eta,
-        })),
-      });
+    if (!data.id) {
+      console.error('API response missing ID field:', data);
+      throw new Error('Invalid API response format');
     }
     
-    // Insert weather cells
-    if (scenario.weather_cells && scenario.weather_cells.length > 0) {
-      console.log(`Adding weather conditions...`);
-      
-      await prisma.weatherCondition.create({
-        data: {
-          scenario_id: scenarioId,
-          weather_data: scenario.weather_cells,
-        },
-      });
-    }
-    
-    // Insert decisions
-    if (scenario.decisions && scenario.decisions.length > 0) {
-      console.log(`Adding ${scenario.decisions.length} decisions...`);
-      
-      for (const decision of scenario.decisions) {
-        // Insert decision
-        const decisionRecord = await prisma.decision.create({
-          data: {
-            scenario_id: scenarioId,
-            title: decision.title,
-            description: decision.description,
-            time_limit: decision.time_limit,
-            is_urgent: decision.is_urgent,
-            trigger_condition: decision.trigger_condition,
-            is_active: false, // Initially inactive
-          },
-        });
-        
-        // Insert decision options
-        if (decision.options && decision.options.length > 0) {
-          await prisma.decisionOption.createMany({
-            data: decision.options.map(option => ({
-              decision_id: decisionRecord.id,
-              scenario_id: scenarioId,
-              text: option.text,
-              consequences: option.consequences,
-              is_recommended: option.is_recommended || false,
-            })),
-          });
-        }
-      }
-    }
-    
-    // Insert communications
-    if (scenario.communications && scenario.communications.length > 0) {
-      console.log(`Adding ${scenario.communications.length} communications...`);
-      
-      await prisma.communicationQueue.createMany({
-        data: scenario.communications.map(comm => ({
-          scenario_id: scenarioId,
-          type: comm.type,
-          sender: comm.sender,
-          message: comm.message,
-          is_important: comm.is_important || false,
-          trigger_condition: comm.trigger_condition,
-          is_sent: false, // Initially not sent
-        })),
-      });
-    }
-    
-    console.log('Successfully saved scenario to database');
-    return scenarioId;
+    console.log(`Successfully saved scenario with ID: ${data.id}`);
+    return data.id;
   } catch (error) {
     console.error('Error saving scenario:', error);
     throw new Error('Failed to save scenario');

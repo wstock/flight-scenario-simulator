@@ -100,7 +100,7 @@ export default function NavigationDisplay({
   }
   
   return (
-    <div className={`bg-gray-900 rounded-lg p-4 shadow-lg h-full overflow-hidden ${className}`}>
+    <div className={`bg-gray-900 rounded-lg p-4 shadow-lg h-full flex flex-col overflow-hidden ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-gray-400 font-medium text-sm">NAVIGATION DISPLAY</h3>
         <div className="flex space-x-2">
@@ -113,7 +113,7 @@ export default function NavigationDisplay({
         </div>
       </div>
       
-      <div className="relative w-full h-[calc(100%-2rem)]">
+      <div className="relative flex-grow w-full">
         {/* Aircraft position display container */}
         <div className="absolute inset-0 z-0">
           <ErrorBoundary FallbackComponent={AircraftPositionFallback} onError={handleError}>

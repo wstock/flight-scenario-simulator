@@ -33,3 +33,6 @@
 - Improved API route error handling with better validation and default values
 - Enhanced JSON parsing with advanced fixes for common AI-generated JSON issues
 - Added fallback scenario generation when JSON parsing fails
+- Updated scenarioLoader to use Prisma instead of Supabase for database operations
+- Added API endpoint for listing scenarios to fix "relation does not exist" error
+- Implemented client-side API calls for scenario listing to avoid direct database access in browser

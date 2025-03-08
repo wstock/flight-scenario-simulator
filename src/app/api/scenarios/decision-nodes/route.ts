@@ -1,11 +1,13 @@
-import { createApiLogger } from '@/lib/utils/logger';
-import { db } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { db } from '@/lib/db';
+import { createApiLogger } from '@/lib/utils/logger';
 
 const logger = createApiLogger('Decision-nodesRoute');
 
-from 'next/server';
-import { db } from '@/lib/db';
+// Runtime configuration for Next.js
+export const dynamic = 'force-dynamic';
+export const runtime = 'edge';
+export const preferredRegion = 'auto';
 
 /**
  * GET handler for retrieving decision nodes for a scenario

@@ -23,3 +23,4 @@
 - Implemented proper client/server detection for AI functionality to prevent browser errors
 - Updated AI configuration to use claude-3-7-sonnet-latest model via environment variables
 - Added ANTHROPIC_MODEL and NEXT_PUBLIC_ANTHROPIC_MODEL to .env for easier model upgrades
+- Fixed client-side environment variable issues by using hardcoded values for browser context

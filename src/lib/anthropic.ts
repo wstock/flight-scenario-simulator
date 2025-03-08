@@ -1,10 +1,11 @@
 import { generateChatCompletion, MODELS } from './aiClient';
 import { generateAIResponse } from './aiClient.client';
 
-// Get the model from environment variables or use the default
+// Get the model from environment variables on the server side only
+// For client-side, use a hardcoded value that will be replaced at build time
 const CLAUDE_MODEL = typeof window === 'undefined' 
   ? (process.env.ANTHROPIC_MODEL || MODELS.SONNET)
-  : (process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || MODELS.SONNET);
+  : 'claude-3-7-sonnet-latest';
 
 /**
  * Generates a response using the Anthropic Claude model

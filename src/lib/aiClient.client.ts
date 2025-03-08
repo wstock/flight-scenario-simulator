@@ -7,8 +7,9 @@
 
 import { MODELS } from './aiClient';
 
-// Make the model configurable from the client side as well
-const DEFAULT_MODEL = process.env.NEXT_PUBLIC_ANTHROPIC_MODEL || MODELS.SONNET;
+// In client components, we can't access process.env dynamically at runtime
+// Instead, we'll use a constant that will be replaced at build time
+const DEFAULT_MODEL = 'claude-3-7-sonnet-latest';
 
 /**
  * Generate a chat completion using the API route

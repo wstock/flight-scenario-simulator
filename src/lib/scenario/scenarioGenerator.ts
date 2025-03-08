@@ -178,7 +178,10 @@ function extractJsonFromResponse(response: string): any {
       try {
         const jsonContent = codeBlockMatch[1].trim();
         console.log('Found JSON in code block, attempting to parse...');
-        return JSON.parse(jsonContent);
+        
+        // Try to fix common JSON issues before parsing
+        const fixedJson = fixCommonJsonIssues(jsonContent);
+        return JSON.parse(fixedJson);
       } catch (codeBlockError) {
         console.error('Failed to parse JSON from code block:', codeBlockError);
       }
@@ -192,10 +195,10 @@ function extractJsonFromResponse(response: string): any {
       // Try each match until one works
       for (const match of jsonMatches) {
         try {
-          // Sanitize the JSON string before parsing
-          const sanitized = sanitizeJsonString(match[0]);
-          console.log('Found JSON-like structure, attempting to parse sanitized JSON...');
-          return JSON.parse(sanitized);
+          // Fix common JSON issues before parsing
+          const fixedJson = fixCommonJsonIssues(match[0]);
+          console.log('Found JSON-like structure, attempting to parse fixed JSON...');
+          return JSON.parse(fixedJson);
         } catch (jsonError) {
           console.error('Failed to parse JSON match:', jsonError);
           // Continue to the next match
@@ -211,10 +214,10 @@ function extractJsonFromResponse(response: string): any {
       
       for (const match of sortedMatches) {
         try {
-          // Sanitize the JSON string before parsing
-          const sanitized = sanitizeJsonString(match);
-          console.log('Trying to parse largest JSON block (sanitized)...');
-          return JSON.parse(sanitized);
+          // Fix common JSON issues before parsing
+          const fixedJson = fixCommonJsonIssues(match);
+          console.log('Trying to parse largest JSON block (fixed)...');
+          return JSON.parse(fixedJson);
         } catch (error) {
           console.error('Failed to parse JSON block:', error);
           // Continue to the next match
@@ -240,21 +243,49 @@ function extractJsonFromResponse(response: string): any {
 }
 
 /**
- * Sanitizes a JSON string to fix common issues
+ * Fixes common JSON issues that might cause parsing to fail
  */
-function sanitizeJsonString(jsonString: string): string {
+function fixCommonJsonIssues(jsonString: string): string {
+  // Log the original string for debugging
+  console.log('Fixing JSON issues in string:', jsonString.substring(0, 100) + '...');
+  
   // Replace any trailing commas in arrays or objects
-  let sanitized = jsonString.replace(/,\s*([\]}])/g, '$1');
+  let fixed = jsonString.replace(/,\s*([\]}])/g, '$1');
+  
+  // Fix missing commas between array elements (common issue with AI-generated JSON)
+  fixed = fixed.replace(/}\s*{/g, '},{');
+  fixed = fixed.replace(/]\s*\[/g, '],[');
+  fixed = fixed.replace(/"\s*{/g, '",{');
+  fixed = fixed.replace(/}\s*"/g, '},"');
   
   // Fix unescaped quotes within strings
-  sanitized = sanitized.replace(/(?<=:\s*")(.+?)(?="[\s,}])/g, (match) => {
+  fixed = fixed.replace(/(?<=:\s*")(.+?)(?="[\s,}])/g, (match) => {
     return match.replace(/(?<!\\)"/g, '\\"');
   });
   
   // Fix missing quotes around property names
-  sanitized = sanitized.replace(/(\{|\,)\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+  fixed = fixed.replace(/(\{|\,)\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
   
-  return sanitized;
+  // Fix missing quotes around string values
+  fixed = fixed.replace(/:\s*([a-zA-Z0-9_]+)(\s*[,}])/g, (match, p1, p2) => {
+    // Don't add quotes to true, false, null, or numbers
+    if (p1 === 'true' || p1 === 'false' || p1 === 'null' || !isNaN(Number(p1))) {
+      return match;
+    }
+    return ': "' + p1 + '"' + p2;
+  });
+  
+  // Log the fixed string for debugging
+  console.log('Fixed JSON:', fixed.substring(0, 100) + '...');
+  
+  return fixed;
+}
+
+/**
+ * Sanitizes a JSON string to fix common issues
+ */
+function sanitizeJsonString(jsonString: string): string {
+  return fixCommonJsonIssues(jsonString);
 }
 
 /**
@@ -386,10 +417,7 @@ export async function generateScenarioFromPrompt(promptText: string): Promise<st
           "name": "Waypoint identifier",
           "position_x": number (between -1 and 1, relative to center of display),
           "position_y": number (between -1 and 1, relative to center of display),
-          "sequence": number (order in flight path),
-          "is_active": boolean (optional),
-          "is_passed": boolean (optional),
-          "eta": "HH:MM" (optional)
+          "sequence": number (order in flight path)
         }
       ],
       "weather_cells": [
@@ -429,6 +457,8 @@ export async function generateScenarioFromPrompt(promptText: string): Promise<st
       ]
     }
     
+    IMPORTANT: Make sure to use valid JSON format with proper commas between array elements and no trailing commas.
+    
     Make sure the scenario is realistic and challenging, with appropriate waypoints, weather conditions, decisions, and communications.
     Include at least 3-4 decision points that are relevant to the scenario.
     Include realistic communications between ATC and crew throughout the flight.
@@ -439,19 +469,62 @@ export async function generateScenarioFromPrompt(promptText: string): Promise<st
   `;
 
   try {
+    console.log('Generating scenario from prompt:', promptText);
+    
     // Generate scenario using Anthropic API via the anthropic.ts module
     // which handles client/server environment differences
     const response = await generateAnthropicResponse([
       { role: 'user', content: prompt }
     ]);
+    
+    console.log('Received response from AI, extracting JSON...');
 
     // Parse JSON from response
-    const scenarioData = extractJsonFromResponse(response);
+    let scenarioData;
+    try {
+      scenarioData = extractJsonFromResponse(response);
+    } catch (parseError) {
+      console.error('Failed to parse JSON from AI response:', parseError);
+      
+      // Create a minimal valid scenario as fallback
+      console.log('Creating fallback scenario with minimal data...');
+      scenarioData = {
+        title: `Scenario: ${promptText.substring(0, 30)}...`,
+        description: promptText,
+        aircraft: "Boeing 737-800",
+        departure: "EGLL (London Heathrow)",
+        arrival: "EGCC (Manchester)",
+        initial_altitude: 30000,
+        initial_heading: 360,
+        initial_fuel: 15000,
+        max_fuel: 20000,
+        fuel_burn_rate: 50,
+        waypoints: [],
+        weather_cells: [],
+        decisions: [],
+        communications: []
+      };
+    }
+    
+    // Validate the scenario data
+    if (!scenarioData.title) {
+      scenarioData.title = `Scenario: ${promptText.substring(0, 30)}...`;
+    }
+    
+    if (!scenarioData.description) {
+      scenarioData.description = promptText;
+    }
     
     // Save the scenario to the database
-    const scenarioId = await saveScenario(scenarioData);
-    
-    return scenarioId;
+    console.log('Saving scenario to database...');
+    try {
+      const scenarioId = await saveScenario(scenarioData);
+      console.log('Successfully saved scenario with ID:', scenarioId);
+      return scenarioId;
+    } catch (saveError) {
+      console.error('Error saving scenario to database:', saveError);
+      throw new Error('Failed to save scenario to database');
+    }
   } catch (error) {
     console.error('Error generating scenario from prompt:', error);
     throw new Error('Failed to generate scenario from prompt');

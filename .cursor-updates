@@ -8,3 +8,4 @@
 - Captured screenshot of Button component stories in Storybook
 - Completed Project Setup tasks: created Supabase client and Anthropic API integration
 - Completed Information Dashboard components: Altitude, Fuel, Heading, and Scenario Time displays with Storybook stories
+- Completed Navigation Display components: Aircraft Position, Weather Overlay, and Waypoints with Storybook stories

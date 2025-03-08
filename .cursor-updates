@@ -36,3 +36,4 @@
 - Updated scenarioLoader to use Prisma instead of Supabase for database operations
 - Added API endpoint for listing scenarios to fix "relation does not exist" error
 - Implemented client-side API calls for scenario listing to avoid direct database access in browser
+- Fixed compilation error by updating auth module to use db export instead of prisma

@@ -14,3 +14,4 @@
 - Implemented AI Integration: Scenario Generator, Scenario Loader, ATC and Crew Communication Generators
 - Implemented Scenario State Management: Decision Tree, Impact Tracking, Parameter Simulation, Real-Time Adaptation, and Scenario Evaluation
 - Created Flight Simulator UI with Scenarios page and Simulator page integrating all components
+- Fixed Prisma permission issue and updated dashboard components for better TypeScript compatibility

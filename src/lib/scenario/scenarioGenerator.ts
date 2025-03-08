@@ -297,4 +297,100 @@ export async function saveScenario(scenario: Scenario): Promise<string> {
     console.error('Error saving scenario:', error);
     throw new Error('Failed to save scenario');
   }
+}
+
+/**
+ * Generates a flight scenario using Anthropic API based on a natural language prompt
+ */
+export async function generateScenarioFromPrompt(promptText: string): Promise<string> {
+  const prompt = `
+    Generate a detailed flight scenario based on the following description: "${promptText}".
+    
+    Please provide the scenario in the following JSON format:
+    
+    {
+      "title": "Brief title of the scenario",
+      "description": "Detailed description of the scenario setup",
+      "aircraft": "Aircraft type (e.g., Boeing 737, Airbus A320)",
+      "departure": "Departure airport code and name",
+      "arrival": "Arrival airport code and name",
+      "initial_altitude": number (in feet),
+      "initial_heading": number (in degrees),
+      "initial_fuel": number (in pounds),
+      "max_fuel": number (in pounds),
+      "fuel_burn_rate": number (in pounds per minute),
+      "waypoints": [
+        {
+          "name": "Waypoint identifier",
+          "position_x": number (between -1 and 1, relative to center of display),
+          "position_y": number (between -1 and 1, relative to center of display),
+          "sequence": number (order in flight path),
+          "is_active": boolean (optional),
+          "is_passed": boolean (optional),
+          "eta": "HH:MM" (optional)
+        }
+      ],
+      "weather_cells": [
+        {
+          "intensity": "light" | "moderate" | "heavy",
+          "position": {
+            "x": number (between -1 and 1),
+            "y": number (between -1 and 1)
+          },
+          "size": number (between 0 and 1)
+        }
+      ],
+      "decisions": [
+        {
+          "title": "Brief decision title",
+          "description": "Detailed description of the decision to be made",
+          "time_limit": number (in seconds, optional),
+          "is_urgent": boolean,
+          "options": [
+            {
+              "text": "Option text",
+              "consequences": "Description of what happens if this option is chosen",
+              "is_recommended": boolean (optional)
+            }
+          ],
+          "trigger_condition": "Description of when this decision should be triggered"
+        }
+      ],
+      "communications": [
+        {
+          "type": "atc" | "crew" | "system",
+          "sender": "Name or identifier of sender",
+          "message": "The communication message",
+          "is_important": boolean (optional),
+          "trigger_condition": "Description of when this communication should be triggered"
+        }
+      ]
+    }
+    
+    Make sure the scenario is realistic and challenging, with appropriate waypoints, weather conditions, decisions, and communications.
+    Include at least 3-4 decision points that are relevant to the scenario.
+    Include realistic communications between ATC and crew throughout the flight.
+    If the prompt mentions specific weather conditions, make sure to include appropriate weather cells.
+    If the prompt mentions a specific airport or location, use realistic waypoints and routes for that area.
+    If the prompt mentions a specific aircraft type, use realistic parameters for that aircraft.
+    If the prompt doesn't specify certain details, use your judgment to create a coherent and realistic scenario.
+  `;
+
+  try {
+    // Generate scenario using Anthropic API
+    const response = await generateAnthropicResponse([
+      { role: 'user', content: prompt }
+    ]);
+
+    // Parse JSON from response
+    const scenarioData = extractJsonFromResponse(response);
+    
+    // Save the scenario to the database
+    const scenarioId = await saveScenario(scenarioData);
+    
+    return scenarioId;
+  } catch (error) {
+    console.error('Error generating scenario from prompt:', error);
+    throw new Error('Failed to generate scenario from prompt');
+  }
 } 

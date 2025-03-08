@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { listScenarios, activateScenario } from "@/lib/scenario/scenarioLoader";
 import { toast } from "react-toastify";
+import Link from "next/link";
 
 interface Scenario {
   id: string;
@@ -78,7 +79,19 @@ export default function ScenariosPage() {
   return (
     <div className="min-h-screen bg-neutral-900 text-white">
       <div className="container mx-auto p-6">
-        <h1 className="text-3xl font-bold mb-8">Flight Scenarios</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-3xl font-bold">Flight Scenarios</h1>
+          <Link
+            href="/generate"
+            className="px-6 py-3 bg-purple-600 hover:bg-purple-700 rounded-lg font-medium transition-colors flex items-center gap-2"
+          >
+            Generate New Scenario
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-plus">
+              <path d="M5 12h14"></path>
+              <path d="M12 5v14"></path>
+            </svg>
+          </Link>
+        </div>
         
         {scenarios.length === 0 ? (
           <div className="bg-neutral-800 rounded-lg p-6 text-center">

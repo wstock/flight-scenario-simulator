@@ -50,6 +50,13 @@ export default async function Page() {
                       Launch Simulator
                       <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                     </Link>
+                    <Link
+                      href="/generate"
+                      className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white rounded-lg px-8 py-4 text-lg font-medium shadow-lg shadow-purple-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-purple-500/30"
+                    >
+                      Generate Scenario
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Link>
                   </div>
                 </div>
               </section>

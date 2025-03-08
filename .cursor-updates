@@ -11,3 +11,4 @@
 - Completed Navigation Display components: Aircraft Position, Weather Overlay, and Waypoints with Storybook stories
 - Created GitHub repository and added Communications History Component with Supabase integration
 - Added Decision Options Component with time-limited decision interface and Supabase integration
+- Implemented AI Integration: Scenario Generator, Scenario Loader, ATC and Crew Communication Generators

@@ -62,3 +62,7 @@
 - Fixed navigation display conflicts with decision options by isolating component failures
 - Improved error display with transparent overlays and descriptive messages
 - Added proper z-index layering to prevent layout conflicts between navigation elements
+- Fixed navigation display obscuring decision options by adjusting container heights
+- Added overflow control to prevent components from extending beyond their containers
+- Improved layout with proper spacing between navigation display and decision options
+- Added scrollable container for decision options to handle cases with many choices

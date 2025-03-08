@@ -158,22 +158,25 @@ export default function SimulatorPage() {
             </div>
 
             {/* Middle Row - Navigation Display and Communications */}
-            <div className="col-span-8 bg-neutral-800 rounded-lg p-4 h-[60vh]">
-              <NavigationDisplay 
-                scenarioId={activeScenarioId}
-                initialPosition={{ 
-                  latitude: parameters.latitude, 
-                  longitude: parameters.longitude 
-                }}
-                heading={parameters.heading}
-              />
+            <div className="col-span-8 bg-neutral-800 rounded-lg p-4 h-[50vh] overflow-hidden">
+              <div className="h-full relative">
+                <NavigationDisplay 
+                  scenarioId={activeScenarioId}
+                  initialPosition={{ 
+                    latitude: parameters.latitude, 
+                    longitude: parameters.longitude 
+                  }}
+                  heading={parameters.heading}
+                  className="h-full"
+                />
+              </div>
             </div>
-            <div className="col-span-4 bg-neutral-800 rounded-lg p-4 h-[60vh] overflow-y-auto">
+            <div className="col-span-4 bg-neutral-800 rounded-lg p-4 h-[50vh] overflow-y-auto">
               <CommunicationsHistory scenarioId={activeScenarioId} />
             </div>
 
             {/* Bottom Row - Decision Options */}
-            <div className="col-span-12 bg-neutral-800 rounded-lg p-4">
+            <div className="col-span-12 bg-neutral-800 rounded-lg p-4 mt-4 z-30 relative">
               <DecisionOptions scenarioId={activeScenarioId} />
             </div>
           </div>

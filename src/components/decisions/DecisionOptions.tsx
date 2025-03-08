@@ -270,7 +270,7 @@ export default function DecisionOptions({
   // If no decision is active
   if (!currentDecision) {
     return (
-      <div className={`bg-gray-800 rounded-lg p-4 shadow-lg ${className}`}>
+      <div className={`bg-gray-800 rounded-lg p-4 shadow-lg relative z-10 ${className}`}>
         <div className="flex items-center justify-between mb-2">
           <h3 className="text-gray-400 font-medium text-sm">DECISIONS</h3>
         </div>
@@ -282,7 +282,7 @@ export default function DecisionOptions({
   }
   
   return (
-    <div className={`bg-gray-800 rounded-lg p-4 shadow-lg ${className}`}>
+    <div className={`bg-gray-800 rounded-lg p-4 shadow-lg relative z-10 ${className}`}>
       <div className="flex items-center justify-between mb-2">
         <h3 className="text-gray-400 font-medium text-sm">DECISION REQUIRED</h3>
         {timeRemaining !== null && (
@@ -301,7 +301,7 @@ export default function DecisionOptions({
         <p className="text-gray-300 text-sm">{currentDecision.description}</p>
       </div>
       
-      <div className="space-y-3 mb-4">
+      <div className="space-y-3 mb-4 max-h-[300px] overflow-y-auto pr-1">
         {currentDecision.options.map((option) => (
           <div 
             key={option.id}

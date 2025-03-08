@@ -6,6 +6,8 @@ import { Metadata } from "next";
 import ClientProvider from "@/components/ClientProvider";
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
 import { ThemeAwareToast } from "@/components/theme/ThemeAwareToast";
+import ConsoleFilterProvider from "@/components/ConsoleFilterProvider";
+import DebugErrorButton from "@/components/ui/DebugErrorButton";
 
 export const metadata: Metadata = {
   title: "",
@@ -26,8 +28,11 @@ export default function RootLayout({
         <ThemeProvider defaultTheme="system" enableSystem>
           <ClientProvider>
             <TRPCReactProvider>
-              {children}
-              <ThemeAwareToast />
+              <ConsoleFilterProvider>
+                {children}
+                <ThemeAwareToast />
+                <DebugErrorButton />
+              </ConsoleFilterProvider>
             </TRPCReactProvider>
           </ClientProvider>
         </ThemeProvider>

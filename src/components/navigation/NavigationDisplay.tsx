@@ -10,6 +10,10 @@ interface NavigationDisplayProps {
   scenarioId?: string;
   initialHeading?: number;
   initialRange?: number;
+  initialPosition?: {
+    latitude: number;
+    longitude: number;
+  };
 }
 
 /**
@@ -21,6 +25,7 @@ export default function NavigationDisplay({
   scenarioId,
   initialHeading = 0,
   initialRange = 40,
+  initialPosition = { latitude: 37.6213, longitude: -122.3790 }, // Default to SFO
 }: NavigationDisplayProps) {
   const [heading, setHeading] = useState(initialHeading);
   const [range, setRange] = useState(initialRange);
@@ -65,6 +70,7 @@ export default function NavigationDisplay({
           heading={heading}
           range={range}
           scenarioId={scenarioId}
+          initialPosition={initialPosition}
           className="w-full h-full"
         />
         

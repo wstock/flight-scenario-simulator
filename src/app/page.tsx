@@ -30,7 +30,28 @@ export default async function Page() {
             {session ? (
               // Authenticated View
               <section className="max-w-7xl w-full space-y-8 animate-fade-in">
-                <h1> Welcome {session.user?.name}</h1>
+                <div className="flex flex-col items-center justify-center py-12">
+                  <h1 className="text-4xl font-bold mb-6">Welcome, {session.user?.name}</h1>
+                  <p className="text-xl text-neutral-600 dark:text-neutral-400 mb-8 text-center max-w-2xl">
+                    Ready to test your flight skills? Choose an option below to get started.
+                  </p>
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <Link
+                      href="/scenarios"
+                      className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white rounded-lg px-8 py-4 text-lg font-medium shadow-lg shadow-blue-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-blue-500/30"
+                    >
+                      Browse Scenarios
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                    <Link
+                      href="/simulator"
+                      className="group w-full sm:w-auto flex items-center justify-center gap-2 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-lg px-8 py-4 text-lg font-medium shadow-lg shadow-green-500/20 transition-all duration-200 hover:shadow-xl hover:shadow-green-500/30"
+                    >
+                      Launch Simulator
+                      <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+                    </Link>
+                  </div>
+                </div>
               </section>
             ) : (
               // Marketing View

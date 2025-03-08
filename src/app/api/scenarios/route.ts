@@ -39,6 +39,99 @@ export async function GET(req: NextRequest) {
 }
 
 /**
+ * PATCH handler for activating a scenario
+ */
+export async function PATCH(req: NextRequest) {
+  try {
+    // Parse the request body
+    const data = await req.json();
+    const { id, action } = data;
+    
+    if (!id) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: 'Scenario ID is required' 
+        },
+        { status: 400 }
+      );
+    }
+    
+    console.log(`API route: ${action === 'deactivate' ? 'Deactivating' : 'Activating'} scenario ${id}...`);
+    
+    // Get the scenario
+    const scenario = await (db as any).scenario.findUnique({
+      where: { id },
+      include: {
+        waypoints: {
+          orderBy: { sequence: 'asc' }
+        }
+      }
+    });
+    
+    if (!scenario) {
+      return NextResponse.json(
+        { 
+          success: false, 
+          error: `Scenario with ID ${id} not found` 
+        },
+        { status: 404 }
+      );
+    }
+    
+    if (action === 'deactivate') {
+      // Deactivate the scenario
+      await (db as any).scenario.update({
+        where: { id },
+        data: { is_active: false }
+      });
+      
+      // Deactivate all decisions
+      await (db as any).decision.updateMany({
+        where: { scenario_id: id },
+        data: { is_active: false }
+      });
+      
+      console.log(`API route: Scenario ${id} deactivated successfully`);
+    } else {
+      // Activate the scenario
+      await (db as any).scenario.update({
+        where: { id },
+        data: { is_active: true }
+      });
+      
+      // Mark first waypoint as active if available
+      if (scenario.waypoints.length > 0) {
+        const firstWaypoint = scenario.waypoints[0];
+        if (firstWaypoint.id) {
+          await (db as any).waypoint.update({
+            where: { id: firstWaypoint.id },
+            data: { is_active: true }
+          });
+        }
+      }
+      
+      console.log(`API route: Scenario ${id} activated successfully`);
+    }
+    
+    return NextResponse.json({ 
+      success: true,
+      message: `Scenario ${action === 'deactivate' ? 'deactivated' : 'activated'} successfully`
+    });
+  } catch (error) {
+    const errorAction = 'activate'; // Default action if we can't determine it
+    console.error(`API route: Error activating scenario:`, error);
+    return NextResponse.json(
+      { 
+        success: false, 
+        error: `Failed to activate scenario` 
+      },
+      { status: 500 }
+    );
+  }
+}
+
+/**
  * POST handler for saving a new scenario
  */
 export async function POST(req: NextRequest) {

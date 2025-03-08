@@ -26,3 +26,6 @@
 - Fixed client-side environment variable issues by using hardcoded values for browser context
 - Improved JSON parsing from AI responses with more robust extraction methods
 - Enhanced error handling and logging throughout the AI integration pipeline
+- Added database schema for flight simulator with Prisma models
+- Migrated from direct Supabase calls to Prisma client for database operations
+- Enhanced JSON parsing with sanitization and fallback mechanisms

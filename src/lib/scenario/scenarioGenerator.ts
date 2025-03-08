@@ -1,5 +1,6 @@
 import { generateAnthropicResponse } from '@/lib/anthropic';
 import { supabase } from '@/lib/supabase';
+import { prisma } from '@/lib/db';
 
 export interface ScenarioParams {
   aircraft: string;
@@ -192,8 +193,10 @@ function extractJsonFromResponse(response: string): any {
       // Try each match until one works
       for (const match of jsonMatches) {
         try {
-          console.log('Found JSON-like structure, attempting to parse...');
-          return JSON.parse(match[0]);
+          // Sanitize the JSON string before parsing
+          const sanitized = sanitizeJsonString(match[0]);
+          console.log('Found JSON-like structure, attempting to parse sanitized JSON...');
+          return JSON.parse(sanitized);
         } catch (jsonError) {
           console.error('Failed to parse JSON match:', jsonError);
           // Continue to the next match
@@ -209,13 +212,26 @@ function extractJsonFromResponse(response: string): any {
       
       for (const match of sortedMatches) {
         try {
-          console.log('Trying to parse largest JSON block...');
-          return JSON.parse(match);
+          // Sanitize the JSON string before parsing
+          const sanitized = sanitizeJsonString(match);
+          console.log('Trying to parse largest JSON block (sanitized)...');
+          return JSON.parse(sanitized);
         } catch (error) {
           console.error('Failed to parse JSON block:', error);
           // Continue to the next match
         }
       }
+    }
+    
+    // Last resort: try to manually construct a valid JSON object
+    try {
+      console.log('Attempting to manually construct JSON from response...');
+      const manualJson = constructJsonFromText(response);
+      if (manualJson) {
+        return manualJson;
+      }
+    } catch (manualError) {
+      console.error('Failed to manually construct JSON:', manualError);
     }
     
     // If we get here, we couldn't find valid JSON
@@ -225,14 +241,95 @@ function extractJsonFromResponse(response: string): any {
 }
 
 /**
- * Saves a generated scenario to Supabase
+ * Sanitizes a JSON string to fix common issues
+ */
+function sanitizeJsonString(jsonString: string): string {
+  // Replace any trailing commas in arrays or objects
+  let sanitized = jsonString.replace(/,\s*([\]}])/g, '$1');
+  
+  // Fix unescaped quotes within strings
+  sanitized = sanitized.replace(/(?<=:\s*")(.+?)(?="[\s,}])/g, (match) => {
+    return match.replace(/(?<!\\)"/g, '\\"');
+  });
+  
+  // Fix missing quotes around property names
+  sanitized = sanitized.replace(/(\{|\,)\s*([a-zA-Z0-9_]+)\s*:/g, '$1"$2":');
+  
+  return sanitized;
+}
+
+/**
+ * Attempts to construct a valid JSON object from text by extracting key-value pairs
+ */
+function constructJsonFromText(text: string): any | null {
+  const result: Record<string, any> = {};
+  
+  // Extract title
+  const titleMatch = text.match(/title["\s:]+([^"]+)/i);
+  if (titleMatch) result.title = titleMatch[1].trim();
+  
+  // Extract description
+  const descMatch = text.match(/description["\s:]+([^"]+)/i);
+  if (descMatch) result.description = descMatch[1].trim();
+  
+  // Extract aircraft
+  const aircraftMatch = text.match(/aircraft["\s:]+([^"]+)/i);
+  if (aircraftMatch) result.aircraft = aircraftMatch[1].trim();
+  
+  // Extract departure and arrival
+  const departureMatch = text.match(/departure["\s:]+([^"]+)/i);
+  if (departureMatch) result.departure = departureMatch[1].trim();
+  
+  const arrivalMatch = text.match(/arrival["\s:]+([^"]+)/i);
+  if (arrivalMatch) result.arrival = arrivalMatch[1].trim();
+  
+  // Extract numeric values
+  const altitudeMatch = text.match(/initial_altitude["\s:]+(\d+)/i);
+  if (altitudeMatch) result.initial_altitude = parseInt(altitudeMatch[1]);
+  
+  const headingMatch = text.match(/initial_heading["\s:]+(\d+)/i);
+  if (headingMatch) result.initial_heading = parseInt(headingMatch[1]);
+  
+  const fuelMatch = text.match(/initial_fuel["\s:]+(\d+)/i);
+  if (fuelMatch) result.initial_fuel = parseInt(fuelMatch[1]);
+  
+  const maxFuelMatch = text.match(/max_fuel["\s:]+(\d+)/i);
+  if (maxFuelMatch) result.max_fuel = parseInt(maxFuelMatch[1]);
+  
+  const burnRateMatch = text.match(/fuel_burn_rate["\s:]+(\d+)/i);
+  if (burnRateMatch) result.fuel_burn_rate = parseInt(burnRateMatch[1]);
+  
+  // Set default values for required fields if missing
+  if (!result.title) result.title = "Generated Scenario";
+  if (!result.description) result.description = "Automatically generated flight scenario";
+  if (!result.aircraft) result.aircraft = "Boeing 737-800";
+  if (!result.departure) result.departure = "EGLL (London Heathrow)";
+  if (!result.arrival) result.arrival = "EGCC (Manchester)";
+  if (!result.initial_altitude) result.initial_altitude = 30000;
+  if (!result.initial_heading) result.initial_heading = 360;
+  if (!result.initial_fuel) result.initial_fuel = 15000;
+  if (!result.max_fuel) result.max_fuel = 20000;
+  if (!result.fuel_burn_rate) result.fuel_burn_rate = 50;
+  
+  // Add empty arrays for collections
+  result.waypoints = [];
+  result.weather_cells = [];
+  result.decisions = [];
+  result.communications = [];
+  
+  return Object.keys(result).length > 0 ? result : null;
+}
+
+/**
+ * Saves a generated scenario to the database
  */
 export async function saveScenario(scenario: Scenario): Promise<string> {
   try {
+    console.log('Saving scenario to database using Prisma...');
+    
     // First, insert the main scenario record
-    const { data: scenarioData, error: scenarioError } = await supabase
-      .from('scenarios')
-      .insert({
+    const scenarioRecord = await prisma.scenario.create({
+      data: {
         title: scenario.title,
         description: scenario.description,
         aircraft: scenario.aircraft,
@@ -243,47 +340,50 @@ export async function saveScenario(scenario: Scenario): Promise<string> {
         initial_fuel: scenario.initial_fuel,
         max_fuel: scenario.max_fuel,
         fuel_burn_rate: scenario.fuel_burn_rate,
-      })
-      .select('id')
-      .single();
-
-    if (scenarioError) throw scenarioError;
+      },
+    });
     
-    const scenarioId = scenarioData.id;
+    const scenarioId = scenarioRecord.id;
+    console.log(`Created scenario with ID: ${scenarioId}`);
     
     // Insert waypoints
     if (scenario.waypoints && scenario.waypoints.length > 0) {
-      const waypointsWithScenarioId = scenario.waypoints.map(waypoint => ({
-        ...waypoint,
-        scenario_id: scenarioId,
-      }));
+      console.log(`Adding ${scenario.waypoints.length} waypoints...`);
       
-      const { error: waypointsError } = await supabase
-        .from('waypoints')
-        .insert(waypointsWithScenarioId);
-      
-      if (waypointsError) throw waypointsError;
+      await prisma.waypoint.createMany({
+        data: scenario.waypoints.map(waypoint => ({
+          scenario_id: scenarioId,
+          name: waypoint.name,
+          position_x: waypoint.position_x,
+          position_y: waypoint.position_y,
+          sequence: waypoint.sequence,
+          is_active: waypoint.is_active || false,
+          is_passed: waypoint.is_passed || false,
+          eta: waypoint.eta,
+        })),
+      });
     }
     
     // Insert weather cells
     if (scenario.weather_cells && scenario.weather_cells.length > 0) {
-      const { error: weatherError } = await supabase
-        .from('weather_conditions')
-        .insert({
+      console.log(`Adding weather conditions...`);
+      
+      await prisma.weatherCondition.create({
+        data: {
           scenario_id: scenarioId,
           weather_data: scenario.weather_cells,
-        });
-      
-      if (weatherError) throw weatherError;
+        },
+      });
     }
     
     // Insert decisions
     if (scenario.decisions && scenario.decisions.length > 0) {
+      console.log(`Adding ${scenario.decisions.length} decisions...`);
+      
       for (const decision of scenario.decisions) {
         // Insert decision
-        const { data: decisionData, error: decisionError } = await supabase
-          .from('decisions')
-          .insert({
+        const decisionRecord = await prisma.decision.create({
+          data: {
             scenario_id: scenarioId,
             title: decision.title,
             description: decision.description,
@@ -291,50 +391,42 @@ export async function saveScenario(scenario: Scenario): Promise<string> {
             is_urgent: decision.is_urgent,
             trigger_condition: decision.trigger_condition,
             is_active: false, // Initially inactive
-          })
-          .select('id')
-          .single();
-        
-        if (decisionError) throw decisionError;
+          },
+        });
         
         // Insert decision options
         if (decision.options && decision.options.length > 0) {
-          const optionsWithDecisionId = decision.options.map(option => ({
-            decision_id: decisionData.id,
-            scenario_id: scenarioId,
-            text: option.text,
-            consequences: option.consequences,
-            is_recommended: option.is_recommended || false,
-          }));
-          
-          const { error: optionsError } = await supabase
-            .from('decision_options')
-            .insert(optionsWithDecisionId);
-          
-          if (optionsError) throw optionsError;
+          await prisma.decisionOption.createMany({
+            data: decision.options.map(option => ({
+              decision_id: decisionRecord.id,
+              scenario_id: scenarioId,
+              text: option.text,
+              consequences: option.consequences,
+              is_recommended: option.is_recommended || false,
+            })),
+          });
         }
       }
     }
     
     // Insert communications
     if (scenario.communications && scenario.communications.length > 0) {
-      const communicationsWithScenarioId = scenario.communications.map(comm => ({
-        scenario_id: scenarioId,
-        type: comm.type,
-        sender: comm.sender,
-        message: comm.message,
-        is_important: comm.is_important || false,
-        trigger_condition: comm.trigger_condition,
-        is_sent: false, // Initially not sent
-      }));
+      console.log(`Adding ${scenario.communications.length} communications...`);
       
-      const { error: commsError } = await supabase
-        .from('communications_queue')
-        .insert(communicationsWithScenarioId);
-      
-      if (commsError) throw commsError;
+      await prisma.communicationQueue.createMany({
+        data: scenario.communications.map(comm => ({
+          scenario_id: scenarioId,
+          type: comm.type,
+          sender: comm.sender,
+          message: comm.message,
+          is_important: comm.is_important || false,
+          trigger_condition: comm.trigger_condition,
+          is_sent: false, // Initially not sent
+        })),
+      });
     }
     
+    console.log('Successfully saved scenario to database');
     return scenarioId;
   } catch (error) {
     console.error('Error saving scenario:', error);

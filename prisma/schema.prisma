@@ -69,3 +69,97 @@ model VerificationToken {
 
   @@unique([identifier, token])
 }
+
+// Flight Simulator Scenario Models
+
+model Scenario {
+  id              String             @id @default(cuid())
+  title           String
+  description     String
+  aircraft        String
+  departure       String
+  arrival         String
+  initial_altitude Int
+  initial_heading Int
+  initial_fuel    Int
+  max_fuel        Int
+  fuel_burn_rate  Int
+  created_at      DateTime           @default(now())
+  updated_at      DateTime           @updatedAt
+  user_id         String?
+  is_active       Boolean            @default(false)
+  
+  // Relations
+  waypoints       Waypoint[]
+  weather         WeatherCondition?
+  decisions       Decision[]
+  communications  CommunicationQueue[]
+}
+
+model Waypoint {
+  id          String    @id @default(cuid())
+  scenario_id String
+  name        String
+  position_x  Float
+  position_y  Float
+  sequence    Int
+  is_active   Boolean   @default(false)
+  is_passed   Boolean   @default(false)
+  eta         String?
+  
+  // Relations
+  scenario    Scenario  @relation(fields: [scenario_id], references: [id], onDelete: Cascade)
+}
+
+model WeatherCondition {
+  id          String    @id @default(cuid())
+  scenario_id String    @unique
+  weather_data Json
+  
+  // Relations
+  scenario    Scenario  @relation(fields: [scenario_id], references: [id], onDelete: Cascade)
+}
+
+model Decision {
+  id                String           @id @default(cuid())
+  scenario_id       String
+  title             String
+  description       String
+  time_limit        Int?
+  is_urgent         Boolean          @default(false)
+  trigger_condition String
+  is_active         Boolean          @default(false)
+  is_completed      Boolean          @default(false)
+  
+  // Relations
+  scenario          Scenario         @relation(fields: [scenario_id], references: [id], onDelete: Cascade)
+  options           DecisionOption[]
+}
+
+model DecisionOption {
+  id             String    @id @default(cuid())
+  decision_id    String
+  scenario_id    String
+  text           String
+  consequences   String
+  is_recommended Boolean   @default(false)
+  is_selected    Boolean   @default(false)
+  
+  // Relations
+  decision       Decision  @relation(fields: [decision_id], references: [id], onDelete: Cascade)
+}
+
+model CommunicationQueue {
+  id                String    @id @default(cuid())
+  scenario_id       String
+  type              String    // 'atc', 'crew', 'system'
+  sender            String
+  message           String
+  is_important      Boolean   @default(false)
+  trigger_condition String
+  is_sent           Boolean   @default(false)
+  sent_at           DateTime?
+  
+  // Relations
+  scenario          Scenario  @relation(fields: [scenario_id], references: [id], onDelete: Cascade)
+}

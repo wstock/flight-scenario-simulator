@@ -18,18 +18,24 @@ export interface ScenarioTiming {
  */
 export async function getScenarioTiming(scenarioId: string): Promise<ScenarioTiming | null> {
   try {
-    const { data, error } = await supabase
-      .from('active_scenarios')
-      .select('*')
-      .eq('scenario_id', scenarioId)
-      .single();
+    const response = await fetch(`/api/scenarios/timing?scenarioId=${scenarioId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return data;
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to get scenario timing');
+    }
+    
+    return data.timing;
   } catch (error) {
     console.error('Error getting scenario timing:', error);
     throw new Error('Failed to get scenario timing');
@@ -45,22 +51,29 @@ export async function updateScenarioTiming(
   isPaused: boolean = false
 ): Promise<ScenarioTiming> {
   try {
-    const now = new Date().toISOString();
+    const response = await fetch('/api/scenarios/timing', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        scenarioId,
+        elapsedSeconds,
+        isPaused
+      }),
+    });
     
-    const { data, error } = await supabase
-      .from('active_scenarios')
-      .update({
-        last_update_time: now,
-        elapsed_seconds: elapsedSeconds,
-        is_paused: isPaused,
-      })
-      .eq('scenario_id', scenarioId)
-      .select('*')
-      .single();
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
     
-    if (error) throw error;
+    const data = await response.json();
     
-    return data;
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to update scenario timing');
+    }
+    
+    return data.timing;
   } catch (error) {
     console.error('Error updating scenario timing:', error);
     throw new Error('Failed to update scenario timing');

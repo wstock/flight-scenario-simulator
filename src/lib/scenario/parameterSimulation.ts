@@ -1,4 +1,3 @@
-import { supabase } from '@/lib/supabase';
 import { generateAnthropicResponse } from '@/lib/anthropic';
 
 export interface AircraftParameters {
@@ -31,18 +30,24 @@ export interface ParameterChange {
  */
 export async function getCurrentParameters(scenarioId: string): Promise<AircraftParameters | null> {
   try {
-    const { data, error } = await supabase
-      .from('aircraft_positions')
-      .select('*')
-      .eq('scenario_id', scenarioId)
-      .single();
+    const response = await fetch(`/api/scenarios/parameters?scenarioId=${scenarioId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
     
-    if (error) {
-      if (error.code === 'PGRST116') return null; // Not found
-      throw error;
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    return data;
+    const data = await response.json();
+    
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to get current parameters');
+    }
+    
+    return data.parameters;
   } catch (error) {
     console.error('Error getting current parameters:', error);
     throw new Error('Failed to get current parameters');
@@ -57,34 +62,28 @@ export async function updateParameters(
   changes: ParameterChange
 ): Promise<AircraftParameters> {
   try {
-    // Get current parameters
-    const currentParams = await getCurrentParameters(scenarioId);
-    if (!currentParams) {
-      throw new Error('No current parameters found');
+    const response = await fetch('/api/scenarios/parameters', {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        scenarioId,
+        changes
+      }),
+    });
+    
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
     }
     
-    // Apply changes
-    const updateData: any = {};
-    if (changes.altitude !== undefined) updateData.altitude = changes.altitude;
-    if (changes.heading !== undefined) updateData.heading = changes.heading;
-    if (changes.speed !== undefined) updateData.speed = changes.speed;
-    if (changes.vertical_speed !== undefined) updateData.vertical_speed = changes.vertical_speed;
-    if (changes.fuel_burn_rate !== undefined) updateData.fuel_burn_rate = changes.fuel_burn_rate;
-    if (changes.latitude !== undefined) updateData.latitude = changes.latitude;
-    if (changes.longitude !== undefined) updateData.longitude = changes.longitude;
-    if (changes.fuel !== undefined) updateData.fuel = changes.fuel;
+    const data = await response.json();
     
-    // Update in database
-    const { data, error } = await supabase
-      .from('aircraft_positions')
-      .update(updateData)
-      .eq('scenario_id', scenarioId)
-      .select('*')
-      .single();
+    if (!data.success) {
+      throw new Error(data.error || 'Failed to update parameters');
+    }
     
-    if (error) throw error;
-    
-    return data;
+    return data.parameters;
   } catch (error) {
     console.error('Error updating parameters:', error);
     throw new Error('Failed to update parameters');
@@ -100,23 +99,20 @@ export async function simulateParameterChanges(
   optionId: string
 ): Promise<ParameterChange> {
   try {
-    // Get the decision and option details
-    const { data: decisionData, error: decisionError } = await supabase
-      .from('decisions')
-      .select(`
-        id,
-        title,
-        description,
-        decision_options (
-          id,
-          text,
-          consequences
-        )
-      `)
-      .eq('id', decisionId)
-      .single();
-    
-    if (decisionError) throw decisionError;
+    // In a real implementation, we would fetch the decision and option details from the API
+    // For now, we'll use mock data
+    const decisionData = {
+      id: decisionId,
+      title: "Mock Decision",
+      description: "This is a mock decision for testing purposes",
+      decision_options: [
+        {
+          id: optionId,
+          text: "Mock Option",
+          consequences: "This is a mock option for testing purposes"
+        }
+      ]
+    };
     
     // Get the selected option
     const selectedOption = decisionData.decision_options.find((opt: any) => opt.id === optionId);

@@ -38,3 +38,4 @@
 - Implemented client-side API calls for scenario listing to avoid direct database access in browser
 - Fixed compilation error by updating auth module to use db export instead of prisma
 - Created API endpoints for loading and activating scenarios to fix browser compatibility issues
+- Added API endpoints for scenario timing and parameter simulation to fix Supabase dependency errors

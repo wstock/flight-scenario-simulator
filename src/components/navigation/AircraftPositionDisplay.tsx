@@ -3,6 +3,9 @@
 import { useState, useEffect } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPlane } from '@fortawesome/free-solid-svg-icons';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('AircraftPositionDisplay');
 
 interface Position {
   latitude: number;
@@ -30,6 +33,22 @@ export default function AircraftPositionDisplay({
 }: AircraftPositionDisplayProps) {
   const [position, setPosition] = useState<Position>(initialPosition);
   const [displayHeading, setDisplayHeading] = useState(heading);
+  const [displayRange, setDisplayRange] = useState(range);
+  
+  // Range options
+  const rangeOptions = [20, 40, 80, 160];
+  
+  // Handle range change
+  const handleRangeChange = () => {
+    const currentIndex = rangeOptions.indexOf(displayRange);
+    const nextIndex = (currentIndex + 1) % rangeOptions.length;
+    setDisplayRange(rangeOptions[nextIndex]);
+  };
+  
+  // Update range from props
+  useEffect(() => {
+    setDisplayRange(range);
+  }, [range]);
   
   // Set up polling for position updates (replacing Supabase subscription)
   useEffect(() => {
@@ -76,7 +95,7 @@ export default function AircraftPositionDisplay({
         }
       }
     } catch (error) {
-      console.error('Error fetching position data:', error);
+      logger.error('Error fetching position data:', error);
     }
   };
   
@@ -104,18 +123,23 @@ export default function AircraftPositionDisplay({
   const compassRotation = `rotate(${-displayHeading}deg)`;
   
   // Generate range rings (10nm, 20nm, etc.)
-  const rangeRings = Array.from({ length: Math.floor(range / 10) }, (_, i) => (i + 1) * 10);
+  const rangeRings = Array.from({ length: Math.floor(displayRange / 10) }, (_, i) => (i + 1) * 10);
   
   return (
-    <div className={`bg-gray-900 rounded-lg p-4 shadow-lg ${className}`}>
-      <div className="flex items-center justify-between mb-2">
+    <div className={`bg-gray-900 rounded-lg shadow-lg ${className}`}>
+      <div className="flex items-center justify-between p-4">
         <h3 className="text-gray-400 font-medium text-sm">NAVIGATION DISPLAY</h3>
-        <div className="text-white text-sm">
-          <span>RNG {range}NM</span>
+        <div className="flex space-x-2">
+          <button 
+            onClick={handleRangeChange}
+            className="text-white text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600"
+          >
+            RNG {displayRange}NM
+          </button>
         </div>
       </div>
       
-      <div className="relative w-full aspect-square bg-black rounded-full overflow-hidden border border-gray-700">
+      <div className="relative w-full aspect-square bg-black rounded-full overflow-hidden border border-gray-700 mx-auto" style={{ maxHeight: 'calc(100% - 3rem)' }}>
         {/* Compass rose */}
         <div 
           className="absolute inset-0 flex items-center justify-center"
@@ -143,8 +167,8 @@ export default function AircraftPositionDisplay({
               top: '50%',
               left: '50%',
               transform: 'translate(-50%, -50%)',
-              width: `${(ringRange / range) * 100}%`,
-              height: `${(ringRange / range) * 100}%`,
+              width: `${(ringRange / displayRange) * 100}%`,
+              height: `${(ringRange / displayRange) * 100}%`,
             }}
           >
             <span className="absolute bottom-0 left-1/2 -translate-x-1/2 text-[10px] text-gray-500">

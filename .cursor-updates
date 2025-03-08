@@ -66,3 +66,7 @@
 - Added overflow control to prevent components from extending beyond their containers
 - Improved layout with proper spacing between navigation display and decision options
 - Added scrollable container for decision options to handle cases with many choices
+- Fixed NavigationDisplay showing only half and duplicate labels by removing nested container divs
+- Improved NavigationDisplay layout with flex-col and flex-grow for proper height distribution
+- Increased NavigationDisplay container height from 50vh to 60vh for better visibility
+- Added more spacing between NavigationDisplay and DecisionOptions components

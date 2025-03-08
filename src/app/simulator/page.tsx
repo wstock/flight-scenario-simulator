@@ -158,7 +158,7 @@ export default function SimulatorPage() {
             </div>
 
             {/* Middle Row - Navigation Display and Communications */}
-            <div className="col-span-8 bg-neutral-800 rounded-lg p-4 h-[60vh]">
+            <div className="col-span-8 bg-neutral-800 rounded-lg h-[65vh]">
               <NavigationDisplay 
                 scenarioId={activeScenarioId}
                 initialPosition={{ 
@@ -169,7 +169,7 @@ export default function SimulatorPage() {
                 className="h-full"
               />
             </div>
-            <div className="col-span-4 bg-neutral-800 rounded-lg p-4 h-[60vh] overflow-y-auto">
+            <div className="col-span-4 bg-neutral-800 rounded-lg p-4 h-[65vh] overflow-y-auto">
               <CommunicationsHistory scenarioId={activeScenarioId} />
             </div>
 

@@ -5,6 +5,9 @@ import { ErrorBoundary, FallbackProps } from 'react-error-boundary';
 import AircraftPositionDisplay from './AircraftPositionDisplay';
 import WeatherOverlay from './WeatherOverlay';
 import WaypointsDisplay from './WaypointsDisplay';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('NavigationDisplay');
 
 interface NavigationDisplayProps {
   className?: string;
@@ -81,7 +84,7 @@ export default function NavigationDisplay({
 
   // Error handler
   const handleError = (error: Error) => {
-    console.error("Error in NavigationDisplay component:", error);
+    logger.error("Error in NavigationDisplay component:", error);
     setHasError(true);
   };
   
@@ -100,19 +103,7 @@ export default function NavigationDisplay({
   }
   
   return (
-    <div className={`bg-gray-900 rounded-lg p-4 shadow-lg h-full flex flex-col overflow-hidden ${className}`}>
-      <div className="flex items-center justify-between mb-2">
-        <h3 className="text-gray-400 font-medium text-sm">NAVIGATION DISPLAY</h3>
-        <div className="flex space-x-2">
-          <button 
-            onClick={handleRangeChange}
-            className="text-white text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600"
-          >
-            RNG {range}NM
-          </button>
-        </div>
-      </div>
-      
+    <div className={`bg-gray-900 rounded-lg shadow-lg h-full flex flex-col overflow-hidden ${className}`}>
       <div className="relative flex-grow w-full">
         {/* Aircraft position display container */}
         <div className="absolute inset-0 z-0">

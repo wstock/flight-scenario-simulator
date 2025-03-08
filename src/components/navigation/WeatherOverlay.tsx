@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('WeatherOverlay');
 
 interface WeatherCell {
   intensity: 'light' | 'moderate' | 'heavy';
@@ -91,13 +94,13 @@ export default function WeatherOverlay({
           setWeatherCells(weatherData as WeatherCell[]);
         } else if (weatherData && typeof weatherData === 'object') {
           // If it's a weather condition object, generate cells based on the conditions
-          console.log('Weather data is a condition object:', weatherData);
+          logger.debug('Weather data is a condition object');
           
           // Generate weather cells based on the weather conditions
           const cells = generateWeatherCellsFromCondition(weatherData as WeatherCondition);
           setWeatherCells(cells);
         } else {
-          console.error('Weather data is not a valid format:', weatherData);
+          logger.error('Weather data is not a valid format:', weatherData);
           setWeatherCells([]);
         }
       } else {
@@ -105,7 +108,7 @@ export default function WeatherOverlay({
         setWeatherCells([]);
       }
     } catch (error) {
-      console.error('Error fetching weather data:', error);
+      logger.error('Error fetching weather data:', error);
       setWeatherCells([]);
     }
   };

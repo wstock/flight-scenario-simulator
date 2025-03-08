@@ -1,6 +1,9 @@
 "use client";
 
 import { useState, useEffect } from 'react';
+import { createLogger } from '@/lib/utils/logger';
+
+const logger = createLogger('WaypointsDisplay');
 
 interface Waypoint {
   id: string;
@@ -103,7 +106,7 @@ export default function WaypointsDisplay({
         setFlightPath([]);
       }
     } catch (error) {
-      console.error('Error fetching waypoints:', error);
+      logger.error('Error fetching waypoints:', error);
       // Reset on error
       setWaypoints([]);
       setFlightPath([]);
@@ -175,7 +178,7 @@ export default function WaypointsDisplay({
       
       return svgPath || 'M 0 0'; // Provide a fallback valid path if empty
     } catch (error) {
-      console.error('Error generating SVG path:', error);
+      logger.error('Error generating SVG path:', error);
       return 'M 0 0'; // Default valid path on error
     }
   };

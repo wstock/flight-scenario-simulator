@@ -27,7 +27,7 @@ export default function ScenarioGenerator({ className = '' }: ScenarioGeneratorP
       setIsGenerating(true);
       toast.info('Generating scenario... This may take a moment.');
       
-      // Generate the scenario using the Claude API
+      // Generate the scenario using the API
       const scenarioId = await generateScenarioFromPrompt(prompt);
       
       setGeneratedScenarioId(scenarioId);
@@ -38,7 +38,14 @@ export default function ScenarioGenerator({ className = '' }: ScenarioGeneratorP
       
     } catch (error) {
       console.error('Error generating scenario:', error);
-      toast.error('Failed to generate scenario. Please try again.');
+      
+      // Provide more specific error message if available
+      let errorMessage = 'Failed to generate scenario. Please try again.';
+      if (error instanceof Error) {
+        errorMessage = `Error: ${error.message}`;
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setIsGenerating(false);
     }

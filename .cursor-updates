@@ -19,3 +19,5 @@
 - Updated AI client to exclusively use Anthropic's Claude 3.7 Sonnet model, removing OpenAI dependency
 - Installed Anthropic SDK and configured proper API integration
 - Started development and Storybook servers for testing
+- Fixed Anthropic API browser usage by creating a server-side API route and client-side utility
+- Implemented proper client/server detection for AI functionality to prevent browser errors

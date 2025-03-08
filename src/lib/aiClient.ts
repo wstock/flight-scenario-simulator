@@ -23,15 +23,18 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { MessageParam } from '@anthropic-ai/sdk/resources/messages';
 
-// Initialize Anthropic client
-const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY || '',
-});
-
 // Available models
 export const MODELS = {
   SONNET: 'claude-3-sonnet-20240229', // Claude 3.7 Sonnet (default)
 };
+
+// Only initialize Anthropic client on the server side
+let anthropic: Anthropic | null = null;
+if (typeof window === 'undefined') {
+  anthropic = new Anthropic({
+    apiKey: process.env.ANTHROPIC_API_KEY || '',
+  });
+}
 
 export type AIModel = keyof typeof MODELS;
 
@@ -58,6 +61,7 @@ export function parseJsonResponse(response: string): any {
 
 /**
  * Generate a chat completion using the specified model
+ * This function should only be called from server components or API routes
  * 
  * @param messages Array of message objects with role and content
  * @param model Model to use (defaults to SONNET)
@@ -71,6 +75,15 @@ export async function generateChatCompletion(
   temperature: number = 0.7,
   maxTokens: number = 1000
 ): Promise<string> {
+  // Check if we're in a browser environment
+  if (typeof window !== 'undefined') {
+    throw new Error('generateChatCompletion cannot be called from client components. Use the /api/ai route instead.');
+  }
+
+  if (!anthropic) {
+    throw new Error('Anthropic client not initialized');
+  }
+
   try {
     // Convert messages to Anthropic format
     const anthropicMessages: MessageParam[] = messages.map(msg => ({

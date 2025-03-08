@@ -301,6 +301,7 @@ export async function saveScenario(scenario: Scenario): Promise<string> {
 
 /**
  * Generates a flight scenario using Anthropic API based on a natural language prompt
+ * This function can be called from both client and server components
  */
 export async function generateScenarioFromPrompt(promptText: string): Promise<string> {
   const prompt = `
@@ -377,7 +378,8 @@ export async function generateScenarioFromPrompt(promptText: string): Promise<st
   `;
 
   try {
-    // Generate scenario using Anthropic API
+    // Generate scenario using Anthropic API via the anthropic.ts module
+    // which handles client/server environment differences
     const response = await generateAnthropicResponse([
       { role: 'user', content: prompt }
     ]);

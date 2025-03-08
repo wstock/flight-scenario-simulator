@@ -39,22 +39,62 @@ if (typeof window === 'undefined') {
 export type AIModel = keyof typeof MODELS;
 
 export function parseJsonResponse(response: string): any {
-  // First try parsing the response directly
   try {
+    // First try parsing the response directly
     return JSON.parse(response);
   } catch (e) {
-    // If direct parsing fails, look for code blocks
-    const codeBlockRegex = /```(?:json|[^\n]*\n)?([\s\S]*?)```/;
-    const match = response.match(codeBlockRegex);
-
-    if (match && match[1]) {
+    console.log('Failed to parse entire response as JSON, trying to extract JSON...');
+    
+    // Try to extract JSON from code blocks (```json ... ```)
+    const codeBlockRegex = /```(?:json)?\s*([\s\S]*?)```/;
+    const codeBlockMatch = response.match(codeBlockRegex);
+    
+    if (codeBlockMatch && codeBlockMatch[1]) {
       try {
-        return JSON.parse(match[1].trim());
-      } catch (innerError) {
-        throw new Error("Failed to parse JSON from code block");
+        const jsonContent = codeBlockMatch[1].trim();
+        console.log('Found JSON in code block, attempting to parse...');
+        return JSON.parse(jsonContent);
+      } catch (codeBlockError) {
+        console.error('Failed to parse JSON from code block:', codeBlockError);
       }
     }
-
+    
+    // If code block extraction fails, try to find any JSON-like structure
+    const jsonRegex = /(\{[\s\S]*\})/g;
+    const jsonMatches = [...response.matchAll(jsonRegex)];
+    
+    if (jsonMatches.length > 0) {
+      // Try each match until one works
+      for (const match of jsonMatches) {
+        try {
+          console.log('Found JSON-like structure, attempting to parse...');
+          return JSON.parse(match[0]);
+        } catch (jsonError) {
+          console.error('Failed to parse JSON match:', jsonError);
+          // Continue to the next match
+        }
+      }
+    }
+    
+    // If all else fails, try to extract the largest {...} block
+    const jsonMatch = response.match(/\{[\s\S]*?\}/g);
+    if (jsonMatch) {
+      // Sort by length and try the longest match first (most likely to be the complete JSON)
+      const sortedMatches = [...jsonMatch].sort((a, b) => b.length - a.length);
+      
+      for (const match of sortedMatches) {
+        try {
+          console.log('Trying to parse largest JSON block...');
+          return JSON.parse(match);
+        } catch (error) {
+          console.error('Failed to parse JSON block:', error);
+          // Continue to the next match
+        }
+      }
+    }
+    
+    // If we get here, we couldn't find valid JSON
+    console.error('Response content that failed to parse:', response);
     throw new Error("No valid JSON found in response");
   }
 }

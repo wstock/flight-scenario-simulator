@@ -28,6 +28,8 @@ export async function generateAIResponse(
   maxTokens: number = 1000
 ): Promise<string> {
   try {
+    console.log(`Client: Sending request to API route with model ${model}`);
+    
     const response = await fetch('/api/ai', {
       method: 'POST',
       headers: {
@@ -42,14 +44,27 @@ export async function generateAIResponse(
     });
 
     if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(`API error: ${errorData.error || response.statusText}`);
+      const errorData = await response.json().catch(() => ({ error: 'Failed to parse error response' }));
+      console.error('Client: API error response:', errorData);
+      
+      const errorMessage = errorData.message || errorData.error || response.statusText;
+      throw new Error(`API error: ${errorMessage}`);
     }
 
-    const data = await response.json();
+    const data = await response.json().catch(() => {
+      console.error('Client: Failed to parse JSON response from API');
+      throw new Error('Failed to parse response from API');
+    });
+    
+    if (!data.response) {
+      console.error('Client: API response missing response field:', data);
+      throw new Error('Invalid API response format');
+    }
+    
+    console.log(`Client: Successfully received response (${data.response.length} chars)`);
     return data.response;
   } catch (error) {
-    console.error('Error generating AI response:', error);
+    console.error('Client: Error generating AI response:', error);
     throw error;
   }
 } 

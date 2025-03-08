@@ -17,18 +17,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const response = await generateChatCompletion(
-      messages,
-      model,
-      temperature,
-      maxTokens
-    );
-
-    return NextResponse.json({ response });
+    console.log(`API route: Processing request with model ${model}`);
+    
+    try {
+      const response = await generateChatCompletion(
+        messages,
+        model,
+        temperature,
+        maxTokens
+      );
+      
+      console.log(`API route: Successfully generated response (${response.length} chars)`);
+      
+      return NextResponse.json({ response });
+    } catch (aiError) {
+      console.error('API route: Error generating AI response:', aiError);
+      
+      // Provide more specific error information
+      const errorMessage = aiError instanceof Error 
+        ? aiError.message 
+        : 'Unknown error generating AI response';
+        
+      return NextResponse.json(
+        { 
+          error: 'AI generation failed', 
+          message: errorMessage,
+          timestamp: new Date().toISOString()
+        },
+        { status: 500 }
+      );
+    }
   } catch (error) {
-    console.error('Error in AI API route:', error);
+    console.error('API route: Error processing request:', error);
+    
     return NextResponse.json(
-      { error: 'Failed to generate AI response' },
+      { 
+        error: 'Failed to process request',
+        message: error instanceof Error ? error.message : 'Unknown error',
+        timestamp: new Date().toISOString()
+      },
       { status: 500 }
     );
   }

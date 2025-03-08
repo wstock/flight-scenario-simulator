@@ -27,8 +27,12 @@ export default function ScenarioGenerator({ className = '' }: ScenarioGeneratorP
       setIsGenerating(true);
       toast.info('Generating scenario... This may take a moment.');
       
+      console.log('ScenarioGenerator: Starting scenario generation with prompt:', prompt.substring(0, 50) + '...');
+      
       // Generate the scenario using the API
       const scenarioId = await generateScenarioFromPrompt(prompt);
+      
+      console.log('ScenarioGenerator: Successfully generated scenario with ID:', scenarioId);
       
       setGeneratedScenarioId(scenarioId);
       toast.success('Scenario generated successfully!');
@@ -37,12 +41,22 @@ export default function ScenarioGenerator({ className = '' }: ScenarioGeneratorP
       localStorage.setItem('lastGeneratedScenarioId', scenarioId);
       
     } catch (error) {
-      console.error('Error generating scenario:', error);
+      console.error('ScenarioGenerator: Error generating scenario:', error);
       
       // Provide more specific error message if available
       let errorMessage = 'Failed to generate scenario. Please try again.';
+      
       if (error instanceof Error) {
-        errorMessage = `Error: ${error.message}`;
+        // Extract the most useful part of the error message
+        const message = error.message;
+        
+        if (message.includes('JSON')) {
+          errorMessage = 'Error parsing AI response. Please try again with a different prompt.';
+        } else if (message.includes('API')) {
+          errorMessage = 'API error: ' + message.replace('API error: ', '');
+        } else {
+          errorMessage = `Error: ${message}`;
+        }
       }
       
       toast.error(errorMessage);
